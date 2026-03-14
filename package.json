@@ -1,0 +1,15 @@
+{
+  "name": "viruj-health",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "bun --cwd apps/api dev",
+    "dev:mobile": "bun --cwd apps/mobile start",
+    "dev": "bun run dev:api & bun run dev:mobile"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "^55.0.11"
+  }
+}
