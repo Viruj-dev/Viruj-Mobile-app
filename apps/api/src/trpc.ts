@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 const t = initTRPC.create();
 
-export const publicProcedure = t.procedure;
-export const router = t.router;
+const router = t.router;
+const publicProcedure = t.procedure;
 
 export const appRouter = router({
   hello: publicProcedure
@@ -17,3 +17,4 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+export { publicProcedure, router };

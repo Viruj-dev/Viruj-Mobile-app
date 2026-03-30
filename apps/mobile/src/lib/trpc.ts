@@ -1,6 +1,4 @@
 import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../../../api/src/trpc';
 
-// Later, this will import the AppRouter from @viruj/api
-// import type { AppRouter } from '@viruj/api/src/trpc';
-
-export const trpc = createTRPCReact<any>();
+export const trpc = createTRPCReact<AppRouter>();

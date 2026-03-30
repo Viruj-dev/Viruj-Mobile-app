@@ -10,6 +10,10 @@
     "dev": "bun run dev:api & bun run dev:mobile"
   },
   "devDependencies": {
-    "babel-preset-expo": "^55.0.11"
+    "babel-preset-expo": "~54.0.0"
+  },
+  "resolutions": {
+    "expo-asset": "12.0.12",
+    "expo-constants": "18.0.13"
   }
 }
