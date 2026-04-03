@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo:*)",
+      "Bash(npx tsc:*)",
+      "Bash(bun run:*)",
+      "Bash(node_modules/.bin/tsc --noEmit 2>&1)",
+      "Bash(bun install:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit 2>&1)",
+      "Bash(bunx expo:*)"
+    ]
+  }
+}
