@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Pressable, Text, View } from "react-native";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
 import {
   AuthScreen,
   AuthHeader,
@@ -13,7 +11,7 @@ import {
   Divider,
   SocialButton,
   FooterLink,
-} from "../auth";
+} from "../auth-ui";
 
 const formSchema = z
   .object({
@@ -21,14 +19,17 @@ const formSchema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Confirm your password"),
-    acceptPrivacy: z.boolean(),
+    acceptPrivacy: z.boolean().refine((value) => value, {
+      message: "Please accept the privacy policy to continue.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
   });
 
-type FormData = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
+type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 interface SignupScreenProps {
   onLoginPress?: () => void;
@@ -39,28 +40,47 @@ export default function SignupScreen({
   onLoginPress,
   onSignupSuccess,
 }: SignupScreenProps) {
+  const [values, setValues] = useState<FormValues>({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    acceptPrivacy: false,
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
 
-  const {
-    handleSubmit,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      acceptPrivacy: false,
-    },
-  });
+  const setField = <T extends keyof FormValues>(field: T, value: FormValues[T]) => {
+    setValues((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  };
 
-  const onSubmit = async (values: FormData) => {
-    console.log(values);
-    onSignupSuccess?.();
+  const onSubmit = async () => {
+    const parsed = formSchema.safeParse(values);
+
+    if (!parsed.success) {
+      const nextErrors: FormErrors = {};
+
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === "string" && !(field in nextErrors)) {
+          nextErrors[field as keyof FormValues] = issue.message;
+        }
+      }
+
+      setErrors(nextErrors);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      console.log(parsed.data);
+      onSignupSuccess?.();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,115 +93,128 @@ export default function SignupScreen({
         }
       />
 
-      {/* Name */}
       <Field
         label="Full Name"
-        error={errors.name?.message}
+        error={errors.name}
         input={
           <AuthInput
             placeholder="John Doe"
-            onChangeText={(text) => setValue("name", text)}
+            value={values.name}
+            onChangeText={(text) => setField("name", text)}
           />
         }
       />
 
-      {/* Email */}
       <Field
         label="Email"
-        error={errors.email?.message}
+        error={errors.email}
         input={
           <AuthInput
             placeholder="you@example.com"
+            value={values.email}
             keyboardType="email-address"
-            onChangeText={(text) => setValue("email", text)}
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={(text) => setField("email", text)}
           />
         }
       />
 
-      {/* Password */}
       <Field
         label="Password"
-        error={errors.password?.message}
+        error={errors.password}
         input={
           <AuthInput
-            placeholder="••••••••"
+            placeholder="********"
+            value={values.password}
             secureTextEntry={!showPassword}
-            onChangeText={(text) => setValue("password", text)}
+            onChangeText={(text) => setField("password", text)}
             right={
-              <Ionicons
-                name={showPassword ? "eye-off" : "eye"}
-                size={20}
-                color="#9CA3AF"
-              />
+              <Pressable
+                onPress={() => setShowPassword((value) => !value)}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </Pressable>
             }
           />
         }
       />
 
-      {/* Confirm Password */}
       <Field
         label="Confirm Password"
-        error={errors.confirmPassword?.message}
+        error={errors.confirmPassword}
         input={
           <AuthInput
-            placeholder="••••••••"
+            placeholder="********"
+            value={values.confirmPassword}
             secureTextEntry={!showConfirmPassword}
-            onChangeText={(text) => setValue("confirmPassword", text)}
+            onChangeText={(text) => setField("confirmPassword", text)}
             right={
-              <Ionicons
-                name={showConfirmPassword ? "eye-off" : "eye"}
-                size={20}
-                color="#9CA3AF"
-              />
+              <Pressable
+                onPress={() => setShowConfirmPassword((value) => !value)}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </Pressable>
             }
           />
         }
       />
 
-      {/* Privacy */}
-      <View className="flex-row items-center mb-6">
+      <Pressable
+        onPress={() => setField("acceptPrivacy", !values.acceptPrivacy)}
+        className="mb-2 flex-row items-start"
+      >
         <View
-          className={`w-5 h-5 rounded border items-center justify-center mr-2 ${
-            acceptPrivacy ? "bg-[#6D0F14] border-[#6D0F14]" : "border-gray-400"
+          className={`mt-0.5 mr-3 h-5 w-5 rounded border items-center justify-center ${
+            values.acceptPrivacy
+              ? "border-[#6D0F14] bg-[#6D0F14]"
+              : "border-gray-400"
           }`}
         >
-          {acceptPrivacy && (
+          {values.acceptPrivacy ? (
             <Ionicons name="checkmark" size={14} color="white" />
-          )}
+          ) : null}
         </View>
-        <View className="flex-1">
-          <Ionicons
-            name="document-text-outline"
-            size={16}
-            color="#6B7280"
-            style={{ marginBottom: -2 }}
-          />
+        <View className="flex-1 flex-row">
+          <Ionicons name="document-text-outline" size={16} color="#6B7280" />
+          <Text className="ml-2 text-sm leading-5 text-gray-500">
+            I agree to the privacy policy and terms of use.
+          </Text>
         </View>
-      </View>
+      </Pressable>
+
+      {errors.acceptPrivacy ? (
+        <Text className="mb-4 text-[12px] text-[#DC2626]">
+          {errors.acceptPrivacy}
+        </Text>
+      ) : (
+        <View className="mb-4" />
+      )}
 
       <PrimaryButton
         label="Create Account"
-        onPress={handleSubmit(onSubmit)}
+        onPress={onSubmit}
         loading={isSubmitting}
       />
 
       <Divider label="or continue with" />
 
-      {/* Social Buttons */}
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <SocialButton
-            label="Google"
-            onPress={() => {}}
-            mode="google"
-          />
+          <SocialButton label="Google" onPress={() => {}} mode="google" />
         </View>
         <View className="flex-1">
-          <SocialButton
-            label="Facebook"
-            onPress={() => {}}
-            mode="facebook"
-          />
+          <SocialButton label="Facebook" onPress={() => {}} mode="facebook" />
         </View>
       </View>
 

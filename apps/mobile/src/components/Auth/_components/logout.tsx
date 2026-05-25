@@ -3,7 +3,11 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 // import posthog from "posthog-react-native"; // if using RN version
 
-export default function Logout() {
+interface LogoutProps {
+  onLogout?: () => void;
+}
+
+export default function Logout({ onLogout }: LogoutProps) {
   const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
@@ -15,6 +19,7 @@ export default function Logout() {
 
       // navigation reset (replace with your navigator)
       console.log("Logged out");
+      onLogout?.();
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Logout failed:", error.message);

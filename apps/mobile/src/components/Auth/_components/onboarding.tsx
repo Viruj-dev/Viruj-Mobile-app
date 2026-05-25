@@ -1,49 +1,48 @@
-import { View, Text, Image, Pressable, Dimensions } from "react-native";
+import { View, Text, Image, Pressable } from "react-native";
 import { useState } from "react";
 import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
-const { width } = Dimensions.get("window");
-
 interface Props {
   onComplete: () => void;
 }
 
+const slides = [
+  {
+    title: "YOUR PERSONAL HEALTH COMPANION",
+    description:
+      "Access doctors, clinics, pathlabs, and emergency services all in one place.",
+    image: require("../../../../assets/auth/onboarding-1.png"),
+  },
+  {
+    title: "CONNECT WITH EXPERTS",
+    description:
+      "Book online consultations with top doctors and get prescriptions easily.",
+    image: require("../../../../assets/auth/onboarding-2.jpg"),
+  },
+  {
+    title: "MEET VIRUJ AI",
+    description: "Describe symptoms and get smart health insights instantly.",
+    image: require("../../../../assets/auth/onboarding-3.jpg"),
+  },
+] as const;
+
 export default function OnboardingCarousel({ onComplete }: Props) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const slides = [
-    {
-      title: "YOUR PERSONAL HEALTH COMPANION",
-      description:
-        "Access Doctors, Clinics, Pathlabs, And Emergency Services—All In One Place.",
-      image: require("../../../../assets/auth/onboarding-1.png"),
-    },
-    {
-      title: "CONNECT WITH EXPERTS",
-      description:
-        "Book Online Consultations With Top Doctors and get prescriptions easily.",
-      image: require("../../../../assets/auth/onboarding-2.jpg"),
-    },
-    {
-      title: "MEET VIRUJ AI",
-      description: "Describe symptoms and get smart health insights instantly.",
-      image: require("../../../../assets/auth/onboarding-3.jpg"),
-    },
-  ];
-
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      onComplete();
+      setCurrentSlide((value) => value + 1);
+      return;
     }
+
+    onComplete();
   };
 
   const prevSlide = () => {
     if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
+      setCurrentSlide((value) => value - 1);
     }
   };
 
@@ -54,26 +53,20 @@ export default function OnboardingCarousel({ onComplete }: Props) {
 
   return (
     <View className="flex-1 bg-gray-100 items-center justify-center">
-      <View className="w-full h-full bg-white">
-        {/* Skip */}
+      <View className="h-full w-full bg-white">
         <Pressable
           onPress={onComplete}
-          className="absolute top-12 right-6 z-10"
+          className="absolute right-6 top-12 z-10"
         >
-          <Text className="text-gray-400 text-xs font-bold">SKIP</Text>
+          <Text className="text-xs font-bold text-gray-400">SKIP</Text>
         </Pressable>
 
-        {/* Back */}
-        {currentSlide > 0 && (
-          <Pressable
-            onPress={prevSlide}
-            className="absolute top-12 left-6 z-10"
-          >
+        {currentSlide > 0 ? (
+          <Pressable onPress={prevSlide} className="absolute left-6 top-12 z-10">
             <Ionicons name="arrow-back" size={24} color="gray" />
           </Pressable>
-        )}
+        ) : null}
 
-        {/* Content */}
         <GestureDetector gesture={gesture}>
           <Animated.View
             key={currentSlide}
@@ -81,37 +74,34 @@ export default function OnboardingCarousel({ onComplete }: Props) {
             exiting={FadeOutLeft}
             className="flex-1"
           >
-            {/* Image */}
             <View className="h-[60%] bg-gray-200">
               <Image
                 source={slides[currentSlide].image}
-                className="w-full h-full"
+                className="h-full w-full"
                 resizeMode="cover"
               />
             </View>
 
-            {/* Text */}
-            <View className="flex-1 px-8 py-6 items-center justify-between">
+            <View className="flex-1 items-center justify-between px-8 py-6">
               <View className="items-center">
-                <Text className="text-xl text-gray-700 text-center mb-3 uppercase">
+                <Text className="mb-3 text-center text-xl uppercase text-gray-700">
                   {slides[currentSlide].title}
                 </Text>
 
-                <Text className="text-gray-500 text-sm text-center">
+                <Text className="text-center text-sm text-gray-500">
                   {slides[currentSlide].description}
                 </Text>
               </View>
 
-              {/* Dots */}
-              <View className="flex-row gap-2 mt-6">
+              <View className="mt-6 flex-row gap-2">
                 {slides.map((_, index) => (
                   <Pressable
                     key={index}
                     onPress={() => setCurrentSlide(index)}
                     className={`rounded-full ${
                       index === currentSlide
-                        ? "w-3 h-3 bg-[#6D0F14]"
-                        : "w-2 h-2 bg-gray-300"
+                        ? "h-3 w-3 bg-[#6D0F14]"
+                        : "h-2 w-2 bg-gray-300"
                     }`}
                   />
                 ))}
@@ -120,13 +110,12 @@ export default function OnboardingCarousel({ onComplete }: Props) {
           </Animated.View>
         </GestureDetector>
 
-        {/* CTA */}
         <View className="px-8 pb-10">
           <Pressable
             onPress={nextSlide}
-            className="bg-[#6D0F14] py-4 rounded-xl items-center"
+            className="items-center rounded-xl bg-[#6D0F14] py-4"
           >
-            <Text className="text-white tracking-widest">
+            <Text className="tracking-widest text-white">
               {currentSlide === slides.length - 1 ? "GET STARTED" : "CONTINUE"}
             </Text>
           </Pressable>
