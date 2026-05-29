@@ -25,11 +25,13 @@ type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 interface LoginScreenProps {
   onSignupPress?: () => void;
+  onForgotPasswordPress?: () => void;
   onLoginSuccess?: () => void;
 }
 
 export default function LoginScreen({
   onSignupPress,
+  onForgotPasswordPress,
   onLoginSuccess,
 }: LoginScreenProps) {
   const [values, setValues] = useState<FormValues>({ email: "", password: "" });
@@ -72,9 +74,9 @@ export default function LoginScreen({
   return (
     <AuthScreen>
       <AuthHeader
-        title="Welcome Back"
-        subtitle="Sign in to continue with Viruj Health"
-        icon={<Ionicons name="person-outline" size={32} color="#6D0F14" />}
+        title="Welcome back"
+        subtitle="Access appointments, records, prescriptions, and care updates securely."
+        icon={<Ionicons name="lock-closed-outline" size={32} color="#6D0F14" />}
       />
 
       <Field
@@ -88,6 +90,9 @@ export default function LoginScreen({
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            left={<Ionicons name="mail-outline" size={18} color="#9CA3AF" />}
           />
         }
       />
@@ -101,6 +106,11 @@ export default function LoginScreen({
             value={values.password}
             secureTextEntry={!showPassword}
             onChangeText={(text) => setField("password", text)}
+            textContentType="password"
+            autoComplete="password"
+            left={
+              <Ionicons name="key-outline" size={18} color="#9CA3AF" />
+            }
             right={
               <Pressable
                 onPress={() => setShowPassword((value) => !value)}
@@ -123,7 +133,10 @@ export default function LoginScreen({
           onValueChange={setRememberMe}
           label="Remember me"
         />
-        <ToggleTextButton label="Forgot password?" onPress={() => {}} />
+        <ToggleTextButton
+          label="Forgot password?"
+          onPress={onForgotPasswordPress ?? (() => {})}
+        />
       </View>
 
       <PrimaryButton

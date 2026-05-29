@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -50,19 +52,24 @@ export function AuthScreen({
   return (
     <SafeAreaView className="flex-1 bg-white">
       {scroll ? (
-        <ScrollView
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-            paddingHorizontal: 20,
-            paddingVertical: 24,
-          }}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1"
         >
-          {body}
-        </ScrollView>
+          <ScrollView
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "center",
+              paddingHorizontal: 20,
+              paddingVertical: 24,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {body}
+          </ScrollView>
+        </KeyboardAvoidingView>
       ) : (
         <View className="flex-1 justify-center px-5">{body}</View>
       )}
@@ -74,25 +81,53 @@ export function AuthHeader({
   title,
   subtitle,
   icon,
+  align = "center",
 }: {
   title: string;
   subtitle: string;
   icon?: ReactNode;
+  align?: "center" | "left";
 }) {
   return (
-    <View className="items-center mb-9">
+    <View className={`${align === "center" ? "items-center" : ""} mb-9`}>
       {icon ? (
         <View className="w-16 h-16 rounded-full items-center justify-center bg-[#FEF2F2] mb-6">
           {icon}
         </View>
       ) : null}
-      <Text className="text-4xl font-bold text-gray-900 mb-2 text-center">
+      <Text
+        className={`text-4xl font-bold text-gray-900 mb-2 ${
+          align === "center" ? "text-center" : ""
+        }`}
+      >
         {title}
       </Text>
-      <Text className="text-base text-gray-500 text-center px-4">
+      <Text
+        className={`text-base leading-6 text-gray-500 ${
+          align === "center" ? "text-center px-4" : ""
+        }`}
+      >
         {subtitle}
       </Text>
     </View>
+  );
+}
+
+export function AuthBackButton({
+  label = "Back",
+  onPress,
+}: {
+  label?: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      className="mb-7 flex-row items-center self-start"
+    >
+      <Text className="text-[#6D0F14] text-sm font-semibold">{label}</Text>
+    </Pressable>
   );
 }
 
@@ -118,10 +153,12 @@ export function Field({
 
 export function AuthInput({
   right,
+  left,
   error,
   ...props
 }: React.ComponentProps<typeof TextInput> & {
   right?: ReactNode;
+  left?: ReactNode;
   error?: boolean;
 }) {
   return (
@@ -130,11 +167,16 @@ export function AuthInput({
         error ? "border-red-300" : "border-gray-200"
       }`}
     >
+      {left ? (
+        <View className="absolute top-0 left-0 bottom-0 justify-center pl-3.5">
+          {left}
+        </View>
+      ) : null}
       <TextInput
         placeholderTextColor="#9CA3AF"
         className={`min-h-[56px] px-4 text-[15px] text-gray-900 ${
           right ? "pr-14" : ""
-        }`}
+        } ${left ? "pl-12" : ""}`}
         {...props}
       />
       {right ? (
@@ -337,7 +379,13 @@ export function StatusNotice({
           {title}
         </Text>
       ) : null}
-      <Text className="text-red-700 text-[13px]">{message}</Text>
+      <Text
+        className={`text-[13px] ${
+          tone === "success" ? "text-green-700" : "text-red-700"
+        }`}
+      >
+        {message}
+      </Text>
       {action ? <View className="mt-3">{action}</View> : null}
     </View>
   );
