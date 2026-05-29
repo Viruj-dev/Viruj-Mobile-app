@@ -17,8 +17,11 @@ const formSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Enter a valid email"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Confirm your password"),
+    phone: z
+      .string()
+      .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your password"),
     acceptPrivacy: z.boolean().refine((value) => value, {
       message: "Please accept the privacy policy to continue.",
     }),
@@ -33,7 +36,7 @@ type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 interface SignupScreenProps {
   onLoginPress?: () => void;
-  onSignupSuccess?: () => void;
+  onSignupSuccess?: (phone: string) => void;
 }
 
 export default function SignupScreen({
@@ -43,6 +46,7 @@ export default function SignupScreen({
   const [values, setValues] = useState<FormValues>({
     name: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     acceptPrivacy: false,
@@ -77,7 +81,7 @@ export default function SignupScreen({
     try {
       setIsSubmitting(true);
       console.log(parsed.data);
-      onSignupSuccess?.();
+      onSignupSuccess?.(`+91 ${parsed.data.phone}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -86,8 +90,8 @@ export default function SignupScreen({
   return (
     <AuthScreen>
       <AuthHeader
-        title="Create Account"
-        subtitle="Join us today"
+        title="Create account"
+        subtitle="Set up a secure Viruj Health profile for appointments and medical records."
         icon={
           <Ionicons name="person-add-outline" size={32} color="#6D0F14" />
         }
@@ -98,9 +102,14 @@ export default function SignupScreen({
         error={errors.name}
         input={
           <AuthInput
-            placeholder="John Doe"
+            placeholder="Full legal name"
             value={values.name}
             onChangeText={(text) => setField("name", text)}
+            textContentType="name"
+            autoComplete="name"
+            left={
+              <Ionicons name="person-outline" size={18} color="#9CA3AF" />
+            }
           />
         }
       />
@@ -116,6 +125,28 @@ export default function SignupScreen({
             autoCapitalize="none"
             autoCorrect={false}
             onChangeText={(text) => setField("email", text)}
+            textContentType="emailAddress"
+            autoComplete="email"
+            left={<Ionicons name="mail-outline" size={18} color="#9CA3AF" />}
+          />
+        }
+      />
+
+      <Field
+        label="Mobile number"
+        error={errors.phone}
+        input={
+          <AuthInput
+            placeholder="9876543210"
+            value={values.phone}
+            keyboardType="phone-pad"
+            maxLength={10}
+            onChangeText={(text) =>
+              setField("phone", text.replace(/\D/g, "").slice(0, 10))
+            }
+            textContentType="telephoneNumber"
+            autoComplete="tel"
+            left={<Ionicons name="call-outline" size={18} color="#9CA3AF" />}
           />
         }
       />
@@ -129,6 +160,11 @@ export default function SignupScreen({
             value={values.password}
             secureTextEntry={!showPassword}
             onChangeText={(text) => setField("password", text)}
+            textContentType="newPassword"
+            autoComplete="new-password"
+            left={
+              <Ionicons name="key-outline" size={18} color="#9CA3AF" />
+            }
             right={
               <Pressable
                 onPress={() => setShowPassword((value) => !value)}
@@ -154,6 +190,11 @@ export default function SignupScreen({
             value={values.confirmPassword}
             secureTextEntry={!showConfirmPassword}
             onChangeText={(text) => setField("confirmPassword", text)}
+            textContentType="newPassword"
+            autoComplete="new-password"
+            left={
+              <Ionicons name="shield-checkmark-outline" size={18} color="#9CA3AF" />
+            }
             right={
               <Pressable
                 onPress={() => setShowConfirmPassword((value) => !value)}

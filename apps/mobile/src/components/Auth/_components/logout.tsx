@@ -1,4 +1,4 @@
-import { Pressable, ActivityIndicator } from "react-native";
+import { Pressable, ActivityIndicator, Text } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 // import posthog from "posthog-react-native"; // if using RN version
@@ -34,12 +34,17 @@ export default function Logout({ onLogout }: LogoutProps) {
   return (
     <Pressable
       onPress={handleLogout}
-      className="px-4 py-3 bg-red-900 rounded-lg flex-row items-center justify-center"
+      className="min-h-[54px] rounded-2xl bg-[#6D0F14] flex-row items-center justify-center"
     >
       {loading ? (
         <ActivityIndicator color="white" />
       ) : (
-        <Ionicons name="log-out-outline" size={20} color="white" />
+        <>
+          <Ionicons name="log-out-outline" size={20} color="white" />
+          <Text className="ml-2 text-sm font-semibold text-white">
+            Sign out
+          </Text>
+        </>
       )}
     </Pressable>
   );
