@@ -1,0 +1,46 @@
+Starting project at C:\Users\dhruv\Documents\Dhruv\Products\viruj\Viruj-Mobile-app\apps\mobile
+Starting Metro Bundler
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Web Bundled 1692ms apps\mobile\index.ts (1071 modules)
+ LOG  [web] Logs will appear in the browser console
+Unable to resolve "./src/components/Home/home-screen" from "apps\mobile\App.tsx"
+[0m [90m  9 |[39m [36mimport[39m [33mForgotPasswordScreen[39m [36mfrom[39m [32m"./src/components/Auth/_components/forgot-password"[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mOtpVerificationScreen[39m [36mfrom[39m [32m"./src/components/Auth/_components/otp-verification"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mHomeScreen[39m [36mfrom[39m [32m"./src/components/Home/home-screen"[39m[33m;[39m
+ [90m    |[39m                         [31m[1m^[22m[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36mimport[39m [32m"./global.css"[39m[33m;[39m
+ [90m 14 |[39m[0m
+
+Import stack:
+
+ apps\mobile\App.tsx
+ | import "./src/components/Home/home-screen"
+
+ apps\mobile\index.ts
+ | import "./App"
+
+ 
+ | import "./apps/mobile/index.ts"
+
+Unable to resolve "./src/components/Home/home-screen" from "apps\mobile\App.tsx"
+[0m [90m  9 |[39m [36mimport[39m [33mForgotPasswordScreen[39m [36mfrom[39m [32m"./src/components/Auth/_components/forgot-password"[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m [33mOtpVerificationScreen[39m [36mfrom[39m [32m"./src/components/Auth/_components/otp-verification"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mHomeScreen[39m [36mfrom[39m [32m"./src/components/Home/home-screen"[39m[33m;[39m
+ [90m    |[39m                         [31m[1m^[22m[39m
+ [90m 12 |[39m
+ [90m 13 |[39m [36mimport[39m [32m"./global.css"[39m[33m;[39m
+ [90m 14 |[39m[0m
+
+Import stack:
+
+ apps\mobile\App.tsx
+ | import "./src/components/Home/home-screen"
+
+ apps\mobile\index.ts
+ | import "./App"
+
+ 
+ | import "./apps/mobile/index.ts"
+
