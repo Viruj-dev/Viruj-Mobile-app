@@ -8,7 +8,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
 const navItems: Array<{ label: AppTab; display: string; icon: IconName }> = [
   { label: "Home", display: "Home", icon: "home-outline" },
   { label: "My Health", display: "Health", icon: "pulse-outline" },
-  { label: "AI Assistant", display: "AI Assist", icon: "sparkles" },
+  { label: "AI Assistant", display: "AI Assist", icon: "hardware-chip-outline" },
   { label: "Community", display: "Social", icon: "people-outline" },
   { label: "Profile", display: "Profile", icon: "person-outline" },
 ];
@@ -34,6 +34,7 @@ export default function AppTabBar({
       {navItems.map((tab) => {
         const featured = tab.label === "AI Assistant";
         const active = tab.label === activeTab;
+        const profileActive = active && tab.label === "Profile";
 
         return (
           <Pressable
@@ -45,23 +46,37 @@ export default function AppTabBar({
           >
             <View
               className={`h-[38px] w-[38px] items-center justify-center rounded-full ${
-                active ? "bg-[#E8F8F0]" : ""
+                active ? (profileActive ? "bg-[#B7C7FF]" : "bg-[#E8F8F0]") : ""
               } ${
                 featured
                   ? "h-[62px] w-[62px] rounded-full border-[5px] border-white bg-[#36B49B]"
+                  : profileActive
+                    ? "h-[54px] w-[72px] rounded-full"
                   : ""
               }`}
             >
               <Ionicons
                 name={tab.icon}
                 size={featured ? 28 : 23}
-                color={featured ? "#FFFFFF" : active ? "#059669" : "#7C8AA5"}
+                color={
+                  featured
+                    ? "#FFFFFF"
+                    : profileActive
+                      ? "#40528A"
+                      : active
+                        ? "#059669"
+                        : "#111111"
+                }
               />
             </View>
             <Text
               numberOfLines={1}
               className={`mt-[3px] text-[11px] font-bold ${
-                active ? "text-[#059669]" : "text-[#7C8AA5]"
+                profileActive
+                  ? "text-[#40528A]"
+                  : active
+                    ? "text-[#059669]"
+                    : "text-[#111111]"
               }`}
             >
               {tab.display}

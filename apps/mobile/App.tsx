@@ -11,6 +11,7 @@ import OtpVerificationScreen from "./src/components/Auth/_components/otp-verific
 import HomeScreen from "./src/components/Home/home-screen";
 import MyHealthScreen from "./src/components/MyHealth/my-health-screen";
 import CommunityScreen from "./src/components/Community/community-screen";
+import ProfileScreen from "./src/components/Profile/profile-screen";
 import { AppTab } from "./src/components/AppTabBar";
 
 import "./global.css";
@@ -32,7 +33,12 @@ function AppContent() {
   );
 
   const openAppTab = (tab: AppTab) => {
-    if (tab === "Home" || tab === "My Health" || tab === "Community") {
+    if (
+      tab === "Home" ||
+      tab === "My Health" ||
+      tab === "Community" ||
+      tab === "Profile"
+    ) {
       setActiveTab(tab);
     }
   };
@@ -101,6 +107,10 @@ function AppContent() {
 
   if (activeTab === "Community") {
     return <CommunityScreen onTabPress={openAppTab} />;
+  }
+
+  if (activeTab === "Profile") {
+    return <ProfileScreen onTabPress={openAppTab} />;
   }
 
   return <HomeScreen onTabPress={openAppTab} />;
