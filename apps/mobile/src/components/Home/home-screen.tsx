@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AppTabBar, { AppTab } from "../AppTabBar";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -89,14 +90,6 @@ const concerns: Array<{
     color: "#8B5CF6",
     bg: "#F4F0FF",
   },
-];
-
-const navItems: Array<{ label: string; icon: IconName; active?: boolean }> = [
-  { label: "Home", icon: "home", active: true },
-  { label: "My Health", icon: "pulse-outline" },
-  { label: "AI Assistant", icon: "sparkles" },
-  { label: "Community", icon: "people-outline" },
-  { label: "Profile", icon: "person-circle-outline" },
 ];
 
 const emptyCardThemes = [
@@ -477,61 +470,11 @@ function HomeContent() {
   );
 }
 
-function BottomNav() {
-  return (
-    <View
-      className="absolute bottom-[18px] left-[22px] right-[22px] z-50 h-[76px] flex-row items-center justify-around rounded-[28px] border border-[#ECF0F5] bg-white px-2"
-      style={{
-        elevation: 16,
-        shadowColor: "#123D78",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.12,
-        shadowRadius: 22,
-      }}
-    >
-      {navItems.map((tab) => {
-        const featured = tab.label === "AI Assistant";
-
-        return (
-          <Pressable
-            key={tab.label}
-            className={`min-h-[68px] flex-1 items-center justify-center ${
-              featured ? "-mt-[22px]" : ""
-            }`}
-          >
-            <View
-              className={`h-[38px] w-[38px] items-center justify-center rounded-full ${
-                tab.active ? "bg-[#E8F8F0]" : ""
-              } ${
-                featured
-                  ? "h-[62px] w-[62px] rounded-full border-[5px] border-white bg-[#36B49B]"
-                  : ""
-              }`}
-            >
-              <Ionicons
-                name={tab.icon}
-                size={featured ? 28 : 23}
-                color={
-                  featured ? "#FFFFFF" : tab.active ? "#059669" : "#7C8AA5"
-                }
-              />
-            </View>
-            <Text
-              numberOfLines={1}
-              className={`mt-[3px] text-[11px] font-bold ${
-                tab.active ? "text-[#059669]" : "text-[#7C8AA5]"
-              }`}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-export default function HomeScreen() {
+export default function HomeScreen({
+  onTabPress,
+}: {
+  onTabPress?: (tab: AppTab) => void;
+}) {
   const [cards, setCards] = useState(() => makeEmptyCards(0, 8));
   const [loading, setLoading] = useState(false);
 
@@ -574,7 +517,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      <BottomNav />
+      <AppTabBar activeTab="Home" onTabPress={onTabPress} />
     </SafeAreaView>
   );
 }

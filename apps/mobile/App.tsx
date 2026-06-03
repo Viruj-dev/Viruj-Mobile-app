@@ -9,6 +9,9 @@ import SignupScreen from "./src/components/Auth/_components/signup";
 import ForgotPasswordScreen from "./src/components/Auth/_components/forgot-password";
 import OtpVerificationScreen from "./src/components/Auth/_components/otp-verification";
 import HomeScreen from "./src/components/Home/home-screen";
+import MyHealthScreen from "./src/components/MyHealth/my-health-screen";
+import CommunityScreen from "./src/components/Community/community-screen";
+import { AppTab } from "./src/components/AppTabBar";
 
 import "./global.css";
 
@@ -23,9 +26,16 @@ type AuthStep =
 
 function AppContent() {
   const [step, setStep] = useState<AuthStep>("welcome");
+  const [activeTab, setActiveTab] = useState<AppTab>("Home");
   const [verificationTarget, setVerificationTarget] = useState(
     "+91 98765 43210"
   );
+
+  const openAppTab = (tab: AppTab) => {
+    if (tab === "Home" || tab === "My Health" || tab === "Community") {
+      setActiveTab(tab);
+    }
+  };
 
   if (step === "welcome") {
     return <WelcomeScreen onNext={() => setStep("onboarding")} />;
@@ -40,7 +50,10 @@ function AppContent() {
       <LoginScreen
         onSignupPress={() => setStep("signup")}
         onForgotPasswordPress={() => setStep("forgot-password")}
-        onLoginSuccess={() => setStep("app")}
+        onLoginSuccess={() => {
+          setActiveTab("Home");
+          setStep("app");
+        }}
       />
     );
   }
@@ -74,12 +87,23 @@ function AppContent() {
       <OtpVerificationScreen
         target={verificationTarget}
         onBack={() => setStep("signup")}
-        onVerified={() => setStep("app")}
+        onVerified={() => {
+          setActiveTab("Home");
+          setStep("app");
+        }}
       />
     );
   }
 
-  return <HomeScreen />;
+  if (activeTab === "My Health") {
+    return <MyHealthScreen onTabPress={openAppTab} />;
+  }
+
+  if (activeTab === "Community") {
+    return <CommunityScreen onTabPress={openAppTab} />;
+  }
+
+  return <HomeScreen onTabPress={openAppTab} />;
 }
 
 export default function App() {

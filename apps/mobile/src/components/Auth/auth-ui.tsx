@@ -15,16 +15,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const palette = {
-  background: "#FFFFFF",
-  surface: "#F8FAFC",
-  surfaceAlt: "#F9FAFB",
-  border: "#E5E7EB",
-  text: "#111827",
-  muted: "#6B7280",
-  softMuted: "#9CA3AF",
-  brand: "#6D0F14",
-  brandPressed: "#571015",
-  brandSoft: "#FEF2F2",
+  background: "#F8FBFF",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F0F7FF",
+  border: "#E5ECF4",
+  text: "#001B49",
+  muted: "#536682",
+  softMuted: "#7B8AA6",
+  brand: "#0E9996",
+  brandPressed: "#047C9D",
+  brandSoft: "#E9FBF8",
+  green: "#39C69A",
   danger: "#DC2626",
   dangerSoft: "#FEF2F2",
   success: "#16A34A",
@@ -50,7 +51,7 @@ export function AuthScreen({
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-[#F8FBFF]">
       {scroll ? (
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -77,6 +78,34 @@ export function AuthScreen({
   );
 }
 
+export function VirujWordmark({ compact = false }: { compact?: boolean }) {
+  return (
+    <View className="flex-row items-end self-start">
+      <Text
+        className={`font-extrabold leading-none tracking-normal text-[#001B49] ${
+          compact ? "text-[32px]" : "text-[40px]"
+        }`}
+      >
+        viruj
+      </Text>
+      <View
+        className={`rotate-[-35deg] rounded-full bg-[#39C69A] ${
+          compact
+            ? "-ml-[2px] mb-[25px] h-[8px] w-[6px]"
+            : "-ml-[2px] mb-[30px] h-[9px] w-[7px]"
+        }`}
+      />
+      <View
+        className={`rotate-[35deg] rounded-full bg-[#39C69A] ${
+          compact
+            ? "mb-[31px] ml-[1px] h-[7px] w-[5px]"
+            : "mb-[38px] ml-[1px] h-[8px] w-[6px]"
+        }`}
+      />
+    </View>
+  );
+}
+
 export function AuthHeader({
   title,
   subtitle,
@@ -89,21 +118,24 @@ export function AuthHeader({
   align?: "center" | "left";
 }) {
   return (
-    <View className={`${align === "center" ? "items-center" : ""} mb-9`}>
+    <View className={`${align === "center" ? "items-center" : ""} mb-8`}>
+      <View className={align === "center" ? "items-center" : ""}>
+        <VirujWordmark compact={align !== "center"} />
+      </View>
       {icon ? (
-        <View className="w-16 h-16 rounded-full items-center justify-center bg-[#FEF2F2] mb-6">
+        <View className="mb-5 mt-5 h-16 w-16 items-center justify-center rounded-[22px] bg-[#E9FBF8]">
           {icon}
         </View>
       ) : null}
       <Text
-        className={`text-4xl font-bold text-gray-900 mb-2 ${
+        className={`mb-2 text-[33px] font-extrabold leading-[39px] tracking-normal text-[#001B49] ${
           align === "center" ? "text-center" : ""
         }`}
       >
         {title}
       </Text>
       <Text
-        className={`text-base leading-6 text-gray-500 ${
+        className={`text-[15px] font-medium leading-6 text-[#536682] ${
           align === "center" ? "text-center px-4" : ""
         }`}
       >
@@ -124,9 +156,9 @@ export function AuthBackButton({
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      className="mb-7 flex-row items-center self-start"
+      className="mb-7 flex-row items-center self-start rounded-full border border-[#E5ECF4] bg-white px-4 py-3"
     >
-      <Text className="text-[#6D0F14] text-sm font-semibold">{label}</Text>
+      <Text className="text-sm font-extrabold text-[#001B49]">{label}</Text>
     </Pressable>
   );
 }
@@ -142,7 +174,9 @@ export function Field({
 }) {
   return (
     <View className="mb-[18px]">
-      <Text className="text-sm font-semibold text-gray-700 mb-2">{label}</Text>
+      <Text className="mb-2 text-sm font-extrabold text-[#001B49]">
+        {label}
+      </Text>
       {input}
       {error ? (
         <Text className="text-[#DC2626] text-[12px] mt-1.5">{error}</Text>
@@ -163,9 +197,16 @@ export function AuthInput({
 }) {
   return (
     <View
-      className={`relative border rounded-2xl bg-gray-50 ${
-        error ? "border-red-300" : "border-gray-200"
+      className={`relative rounded-[18px] border bg-white ${
+        error ? "border-red-300" : "border-[#E5ECF4]"
       }`}
+      style={{
+        elevation: 2,
+        shadowColor: "#123D78",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+      }}
     >
       {left ? (
         <View className="absolute top-0 left-0 bottom-0 justify-center pl-3.5">
@@ -173,8 +214,8 @@ export function AuthInput({
         </View>
       ) : null}
       <TextInput
-        placeholderTextColor="#9CA3AF"
-        className={`min-h-[56px] px-4 text-[15px] text-gray-900 ${
+        placeholderTextColor={palette.softMuted}
+        className={`min-h-[58px] px-4 text-[15px] font-semibold text-[#001B49] ${
           right ? "pr-14" : ""
         } ${left ? "pl-12" : ""}`}
         {...props}
@@ -197,7 +238,7 @@ export function ToggleTextButton({
 }) {
   return (
     <Pressable onPress={onPress} hitSlop={8}>
-      <Text className="text-[#6D0F14] text-[12px] font-semibold">{label}</Text>
+      <Text className="text-[12px] font-extrabold text-[#059669]">{label}</Text>
     </Pressable>
   );
 }
@@ -217,9 +258,9 @@ export function RememberSwitch({
         value={value}
         onValueChange={onValueChange}
         thumbColor="#FFFFFF"
-        trackColor={{ false: "#D1D5DB", true: "#6D0F14" }}
+        trackColor={{ false: "#D1D5DB", true: palette.brand }}
       />
-      <Text className="text-gray-500 text-[12px]">{label}</Text>
+      <Text className="text-[12px] font-semibold text-[#536682]">{label}</Text>
     </View>
   );
 }
@@ -241,14 +282,21 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`min-h-[56px] rounded-2xl items-center justify-center bg-[#6D0F14] active:bg-[#571015] mt-2 ${
+      className={`mt-2 min-h-[58px] items-center justify-center rounded-full bg-[#0E9996] active:bg-[#047C9D] ${
         disabled || loading ? "opacity-60" : ""
       } ${className || ""}`}
+      style={{
+        elevation: 5,
+        shadowColor: "#0E9996",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.18,
+        shadowRadius: 18,
+      }}
     >
       {loading ? (
         <ActivityIndicator color="#FFFFFF" size="small" />
       ) : (
-        <Text className="text-white text-[15px] font-semibold">{label}</Text>
+        <Text className="text-[15px] font-extrabold text-white">{label}</Text>
       )}
     </Pressable>
   );
@@ -266,11 +314,11 @@ export function SecondaryButton({
   return (
     <Pressable
       onPress={onPress}
-      className={`min-h-[56px] rounded-2xl items-center justify-center border border-gray-200 bg-white active:bg-slate-50 ${
+      className={`min-h-[56px] items-center justify-center rounded-full border border-[#E5ECF4] bg-white active:bg-slate-50 ${
         className || ""
       }`}
     >
-      <Text className="text-gray-800 text-[15px] font-medium">{label}</Text>
+      <Text className="text-[15px] font-extrabold text-[#001B49]">{label}</Text>
     </Pressable>
   );
 }
@@ -294,12 +342,12 @@ export function SocialButton({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`min-h-[56px] rounded-2xl border border-gray-200 bg-white items-center justify-center flex-row gap-2.5 active:bg-slate-50 ${
+      className={`min-h-[56px] flex-row items-center justify-center gap-2.5 rounded-full border border-[#E5ECF4] bg-white active:bg-slate-50 ${
         disabled || loading ? "opacity-60" : ""
       }`}
     >
       {loading ? (
-        <ActivityIndicator color="#6D0F14" size="small" />
+        <ActivityIndicator color={palette.brand} size="small" />
       ) : (
         <>
           <View
@@ -311,13 +359,13 @@ export function SocialButton({
           >
             <Text
               className={`text-[14px] font-bold ${
-                mode === "google" ? "text-gray-900" : "text-white"
+                mode === "google" ? "text-[#001B49]" : "text-white"
               }`}
             >
               {iconLabel}
             </Text>
           </View>
-          <Text className="text-[14px] text-gray-700">{label}</Text>
+          <Text className="text-[14px] font-bold text-[#24405F]">{label}</Text>
         </>
       )}
     </Pressable>
@@ -327,9 +375,9 @@ export function SocialButton({
 export function Divider({ label }: { label: string }) {
   return (
     <View className="flex-row items-center gap-3 my-8">
-      <View className="flex-1 h-[1px] bg-gray-200" />
-      <Text className="text-[13px] text-gray-400">{label}</Text>
-      <View className="flex-1 h-[1px] bg-gray-200" />
+      <View className="h-[1px] flex-1 bg-[#E5ECF4]" />
+      <Text className="text-[13px] font-semibold text-[#7B8AA6]">{label}</Text>
+      <View className="h-[1px] flex-1 bg-[#E5ECF4]" />
     </View>
   );
 }
@@ -345,9 +393,9 @@ export function FooterLink({
 }) {
   return (
     <View className="mt-8 flex-row items-center justify-center flex-wrap">
-      <Text className="text-gray-500 text-sm">{prompt} </Text>
+      <Text className="text-sm font-semibold text-[#536682]">{prompt} </Text>
       <Pressable onPress={onPress} hitSlop={8}>
-        <Text className="text-[#6D0F14] text-sm font-semibold">
+        <Text className="text-sm font-extrabold text-[#059669]">
           {actionLabel}
         </Text>
       </Pressable>
@@ -370,18 +418,18 @@ export function StatusNotice({
     <View
       className={`rounded-2xl border p-4 mb-[18px] ${
         tone === "success"
-          ? "bg-green-50 border-green-200"
+          ? "bg-[#E9FBF8] border-[#BDEFE3]"
           : "bg-red-50 border-red-200"
       }`}
     >
       {title ? (
-        <Text className="text-gray-900 text-[15px] font-bold mb-1">
+        <Text className="mb-1 text-[15px] font-extrabold text-[#001B49]">
           {title}
         </Text>
       ) : null}
       <Text
         className={`text-[13px] ${
-          tone === "success" ? "text-green-700" : "text-red-700"
+          tone === "success" ? "text-[#047C9D]" : "text-red-700"
         }`}
       >
         {message}

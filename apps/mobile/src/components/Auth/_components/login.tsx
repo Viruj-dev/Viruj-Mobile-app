@@ -76,7 +76,7 @@ export default function LoginScreen({
       <AuthHeader
         title="Welcome back"
         subtitle="Access appointments, records, prescriptions, and care updates securely."
-        icon={<Ionicons name="lock-closed-outline" size={32} color="#6D0F14" />}
+        icon={<Ionicons name="lock-closed-outline" size={32} color="#0E9996" />}
       />
 
       <Field
@@ -92,7 +92,7 @@ export default function LoginScreen({
             keyboardType="email-address"
             textContentType="emailAddress"
             autoComplete="email"
-            left={<Ionicons name="mail-outline" size={18} color="#9CA3AF" />}
+            left={<Ionicons name="mail-outline" size={18} color="#7B8AA6" />}
           />
         }
       />
@@ -109,7 +109,7 @@ export default function LoginScreen({
             textContentType="password"
             autoComplete="password"
             left={
-              <Ionicons name="key-outline" size={18} color="#9CA3AF" />
+              <Ionicons name="key-outline" size={18} color="#7B8AA6" />
             }
             right={
               <Pressable
@@ -119,7 +119,7 @@ export default function LoginScreen({
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={20}
-                  color="#9CA3AF"
+                  color="#7B8AA6"
                 />
               </Pressable>
             }

@@ -93,7 +93,7 @@ export default function SignupScreen({
         title="Create account"
         subtitle="Set up a secure Viruj Health profile for appointments and medical records."
         icon={
-          <Ionicons name="person-add-outline" size={32} color="#6D0F14" />
+          <Ionicons name="person-add-outline" size={32} color="#0E9996" />
         }
       />
 
@@ -108,7 +108,7 @@ export default function SignupScreen({
             textContentType="name"
             autoComplete="name"
             left={
-              <Ionicons name="person-outline" size={18} color="#9CA3AF" />
+              <Ionicons name="person-outline" size={18} color="#7B8AA6" />
             }
           />
         }
@@ -127,7 +127,7 @@ export default function SignupScreen({
             onChangeText={(text) => setField("email", text)}
             textContentType="emailAddress"
             autoComplete="email"
-            left={<Ionicons name="mail-outline" size={18} color="#9CA3AF" />}
+            left={<Ionicons name="mail-outline" size={18} color="#7B8AA6" />}
           />
         }
       />
@@ -146,7 +146,7 @@ export default function SignupScreen({
             }
             textContentType="telephoneNumber"
             autoComplete="tel"
-            left={<Ionicons name="call-outline" size={18} color="#9CA3AF" />}
+            left={<Ionicons name="call-outline" size={18} color="#7B8AA6" />}
           />
         }
       />
@@ -163,7 +163,7 @@ export default function SignupScreen({
             textContentType="newPassword"
             autoComplete="new-password"
             left={
-              <Ionicons name="key-outline" size={18} color="#9CA3AF" />
+              <Ionicons name="key-outline" size={18} color="#7B8AA6" />
             }
             right={
               <Pressable
@@ -173,7 +173,7 @@ export default function SignupScreen({
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={20}
-                  color="#9CA3AF"
+                  color="#7B8AA6"
                 />
               </Pressable>
             }
@@ -193,7 +193,7 @@ export default function SignupScreen({
             textContentType="newPassword"
             autoComplete="new-password"
             left={
-              <Ionicons name="shield-checkmark-outline" size={18} color="#9CA3AF" />
+              <Ionicons name="shield-checkmark-outline" size={18} color="#7B8AA6" />
             }
             right={
               <Pressable
@@ -203,7 +203,7 @@ export default function SignupScreen({
                 <Ionicons
                   name={showConfirmPassword ? "eye-off" : "eye"}
                   size={20}
-                  color="#9CA3AF"
+                  color="#7B8AA6"
                 />
               </Pressable>
             }
@@ -218,8 +218,8 @@ export default function SignupScreen({
         <View
           className={`mt-0.5 mr-3 h-5 w-5 rounded border items-center justify-center ${
             values.acceptPrivacy
-              ? "border-[#6D0F14] bg-[#6D0F14]"
-              : "border-gray-400"
+              ? "border-[#0E9996] bg-[#0E9996]"
+              : "border-[#7B8AA6]"
           }`}
         >
           {values.acceptPrivacy ? (
@@ -227,8 +227,8 @@ export default function SignupScreen({
           ) : null}
         </View>
         <View className="flex-1 flex-row">
-          <Ionicons name="document-text-outline" size={16} color="#6B7280" />
-          <Text className="ml-2 text-sm leading-5 text-gray-500">
+          <Ionicons name="document-text-outline" size={16} color="#536682" />
+          <Text className="ml-2 text-sm font-medium leading-5 text-[#536682]">
             I agree to the privacy policy and terms of use.
           </Text>
         </View>

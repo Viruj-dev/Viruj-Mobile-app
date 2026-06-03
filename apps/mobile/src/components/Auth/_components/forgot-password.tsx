@@ -64,7 +64,7 @@ export default function ForgotPasswordScreen({
         align="left"
         title="Recover access"
         subtitle="Use the email or mobile number linked to your Viruj Health account."
-        icon={<Ionicons name="refresh-circle-outline" size={34} color="#6D0F14" />}
+        icon={<Ionicons name="refresh-circle-outline" size={34} color="#0E9996" />}
       />
 
       {notice ? (
@@ -90,7 +90,7 @@ export default function ForgotPasswordScreen({
             autoCorrect={false}
             keyboardType="email-address"
             left={
-              <Ionicons name="at-circle-outline" size={19} color="#9CA3AF" />
+              <Ionicons name="at-circle-outline" size={19} color="#7B8AA6" />
             }
           />
         }

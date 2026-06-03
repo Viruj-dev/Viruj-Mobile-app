@@ -56,7 +56,7 @@ export default function OtpVerificationScreen({
         align="left"
         title="Verify code"
         subtitle={`Enter the 6-digit code sent to ${target}.`}
-        icon={<Ionicons name="phone-portrait-outline" size={34} color="#6D0F14" />}
+        icon={<Ionicons name="phone-portrait-outline" size={34} color="#0E9996" />}
       />
 
       {resendCount > 0 ? (
@@ -75,10 +75,12 @@ export default function OtpVerificationScreen({
           <View
             key={index}
             className={`h-14 w-12 items-center justify-center rounded-2xl border ${
-              digit ? "border-[#6D0F14] bg-[#FEF2F2]" : "border-gray-200 bg-gray-50"
+              digit
+                ? "border-[#0E9996] bg-[#E9FBF8]"
+                : "border-[#E5ECF4] bg-white"
             }`}
           >
-            <Text className="text-xl font-bold text-gray-950">{digit}</Text>
+            <Text className="text-xl font-extrabold text-[#001B49]">{digit}</Text>
           </View>
         ))}
       </Pressable>
@@ -111,7 +113,9 @@ export default function OtpVerificationScreen({
       />
 
       <View className="mt-6 flex-row items-center justify-center">
-        <Text className="text-sm text-gray-500">Did not receive it? </Text>
+        <Text className="text-sm font-semibold text-[#536682]">
+          Did not receive it?{" "}
+        </Text>
         <ToggleTextButton
           label="Resend"
           onPress={() => setResendCount((value) => value + 1)}

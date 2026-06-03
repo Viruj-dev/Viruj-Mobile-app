@@ -34,7 +34,7 @@ export default function Logout({ onLogout }: LogoutProps) {
   return (
     <Pressable
       onPress={handleLogout}
-      className="min-h-[54px] rounded-2xl bg-[#6D0F14] flex-row items-center justify-center"
+      className="min-h-[54px] flex-row items-center justify-center rounded-full bg-[#0E9996]"
     >
       {loading ? (
         <ActivityIndicator color="white" />
