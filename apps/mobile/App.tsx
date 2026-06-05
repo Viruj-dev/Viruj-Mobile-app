@@ -2,17 +2,17 @@ import { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import WelcomeScreen from "./src/components/Auth/_components/welcome";
-import OnboardingCarousel from "./src/components/Auth/_components/onboarding";
-import LoginScreen from "./src/components/Auth/_components/login";
-import SignupScreen from "./src/components/Auth/_components/signup";
-import ForgotPasswordScreen from "./src/components/Auth/_components/forgot-password";
-import OtpVerificationScreen from "./src/components/Auth/_components/otp-verification";
-import HomeScreen from "./src/components/Home/home-screen";
-import MyHealthScreen from "./src/components/MyHealth/my-health-screen";
-import CommunityScreen from "./src/components/Community/community-screen";
-import ProfileScreen from "./src/components/Profile/profile-screen";
-import { AppTab } from "./src/components/AppTabBar";
+import WelcomeScreen from "./src/screens/Auth/welcome-screen";
+import OnboardingCarousel from "./src/screens/Auth/onboarding-screen";
+import LoginScreen from "./src/screens/Auth/login-screen";
+import SignupScreen from "./src/screens/Auth/signup-screen";
+import ForgotPasswordScreen from "./src/screens/Auth/forgot-password-screen";
+import OtpVerificationScreen from "./src/screens/Auth/otp-verification-screen";
+import HomeScreen from "./src/screens/home/home-screen";
+import MyHealthScreen from "./src/screens/MyHealth/my-health-screen";
+import CommunityScreen from "./src/screens/community/community-screen";
+import ProfileScreen from "./src/screens/profile/profile-screen";
+import { AppTab } from "./src/screens/_components/AppTabBar";
 
 import "./global.css";
 
