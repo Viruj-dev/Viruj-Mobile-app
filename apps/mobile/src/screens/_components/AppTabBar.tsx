@@ -71,6 +71,8 @@ export default function AppTabBar({
             </View>
             <Text
               numberOfLines={1}
+
+              
               className={`mt-[3px] text-[11px] font-bold ${
                 profileActive
                   ? "text-[#40528A]"
