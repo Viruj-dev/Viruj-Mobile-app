@@ -2,7 +2,7 @@
 import { describe, expect, mock, test } from "bun:test";
 import { createApiClient, getAccessToken, setAccessToken } from "../lib/api-client";
 import { createAuthStorage } from "../features/auth/services/auth-storage.service";
-import { getOrCreateInstallationId } from "../features/auth/services/device.service";
+import { getMobileAuthPlatform, getOrCreateInstallationId } from "../features/auth/services/device.service";
 import { authReducer, initialAuthState } from "../features/auth/state/auth.reducer";
 import { selectRootRoute } from "../navigation/routes";
 import {
@@ -16,6 +16,7 @@ import {
   shouldShowDevelopmentOtp,
 } from "../features/auth/utils/auth-errors";
 import { formatCountdown, nextCountdown } from "../features/auth/utils/countdown";
+import { getApiBaseUrl } from "../lib/env";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status });
@@ -80,6 +81,20 @@ describe("otp state helpers", () => {
     expect(state.status).toBe("requiresOnboarding");
   });
 
+  test("maps backend snake_case OTP errors", () => {
+    expect(getAuthErrorMessage("otp_request_cooldown")).toBe(
+      "Too many OTP requests. Please wait before trying again."
+    );
+    expect(getAuthErrorMessage("otp_challenge_consumed")).toBe(
+      "That code has already been used. Request a new one."
+    );
+  });
+
+  test("keeps generic backend validation errors generic", () => {
+    expect(getAuthErrorMessage("invalid_request")).toBe(
+      "Something went wrong. Please try again."
+    );
+  });
   test("keeps verification failures user-safe", () => {
     expect(getAuthErrorMessage("OTP_INVALID")).toBe("The code you entered is incorrect.");
     expect(getAuthErrorMessage("OTP_EXPIRED")).toBe("That code has expired. Request a new one.");
@@ -98,6 +113,13 @@ describe("otp state helpers", () => {
     expect(nextCountdown(1)).toBe(0);
     expect(nextCountdown(0)).toBe(0);
     expect(formatCountdown(65)).toBe("1:05");
+  });
+});
+
+describe("device info", () => {
+  test("uses a mobile platform for Expo web preview auth", () => {
+    expect(getMobileAuthPlatform("web")).toBe("android");
+    expect(getMobileAuthPlatform("ios")).toBe("ios");
   });
 });
 
@@ -121,6 +143,14 @@ describe("secure storage and installation id", () => {
   });
 });
 
+describe("api response handling", () => {
+  test("unwraps backend success data envelopes", async () => {
+    const fetcher = mock(async () => jsonResponse({ success: true, data: { challengeId: "c1" } })) as unknown as typeof fetch;
+    const client = createApiClient({ baseUrl: "https://api.test", fetcher });
+
+    await expect(client.request("/otp", { method: "POST" })).resolves.toEqual({ challengeId: "c1" });
+  });
+});
 describe("session and refresh behavior", () => {
   test("bootstraps without token to unauthenticated reducer state", () => {
     const state = authReducer(initialAuthState, { type: "UNAUTHENTICATED" });
@@ -208,5 +238,21 @@ describe("logout and navigation guards", () => {
     expect(selectRootRoute("unauthenticated")).toBe("auth");
     expect(selectRootRoute("requiresOnboarding")).toBe("onboarding");
     expect(selectRootRoute("authenticated")).toBe("app");
+  });
+});
+describe("environment configuration", () => {
+  test("uses local API for Expo web preview on localhost", () => {
+    const previousWindow = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: { location: { hostname: "localhost" } },
+    });
+
+    expect(getApiBaseUrl()).toBe("http://localhost:4000");
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: previousWindow,
+    });
   });
 });

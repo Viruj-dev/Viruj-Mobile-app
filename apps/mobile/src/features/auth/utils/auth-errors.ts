@@ -15,8 +15,37 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   UNKNOWN: "Something went wrong. Please try again.",
 };
 
+const BACKEND_ERROR_CODES: Record<string, AuthErrorCode> = {
+  otp_request_cooldown: "OTP_RATE_LIMITED",
+  otp_phone_hourly_limit: "OTP_RATE_LIMITED",
+  otp_ip_hourly_limit: "OTP_RATE_LIMITED",
+  otp_temporarily_blocked: "OTP_RATE_LIMITED",
+  otp_delivery_failed: "OTP_RATE_LIMITED",
+  otp_challenge_not_found: "OTP_CHALLENGE_NOT_FOUND",
+  otp_challenge_phone_mismatch: "OTP_CHALLENGE_NOT_FOUND",
+  otp_challenge_purpose_mismatch: "OTP_CHALLENGE_NOT_FOUND",
+  otp_challenge_superseded: "OTP_CHALLENGE_NOT_FOUND",
+  otp_invalid: "OTP_INVALID",
+  otp_expired: "OTP_EXPIRED",
+  otp_challenge_consumed: "OTP_ALREADY_USED",
+  otp_attempt_limit: "OTP_TOO_MANY_ATTEMPTS",
+  refresh_token_invalid: "AUTH_INVALID_REFRESH_TOKEN",
+  refresh_device_mismatch: "AUTH_INVALID_REFRESH_TOKEN",
+  refresh_token_reused: "AUTH_REFRESH_TOKEN_REUSED",
+  mobile_session_invalid: "AUTH_SESSION_REVOKED",
+  mobile_access_token_invalid: "AUTH_UNAUTHORIZED",
+};
+
+export function normalizeAuthErrorCode(code?: string): AuthErrorCode {
+  if (!code) {
+    return "UNKNOWN";
+  }
+
+  return BACKEND_ERROR_CODES[code] ?? (code as AuthErrorCode);
+}
+
 export function getAuthErrorMessage(code?: string): string {
-  return MESSAGES[(code as AuthErrorCode) || "UNKNOWN"] ?? MESSAGES.UNKNOWN;
+  return MESSAGES[normalizeAuthErrorCode(code)] ?? MESSAGES.UNKNOWN;
 }
 
 export function createAuthApiError({
@@ -28,15 +57,16 @@ export function createAuthApiError({
   status?: number;
   message?: string;
 }): AuthApiError {
-  const error = new Error(message || getAuthErrorMessage(code)) as AuthApiError;
-  error.code = ((code as AuthErrorCode) || "UNKNOWN") as AuthErrorCode;
+  const normalizedCode = normalizeAuthErrorCode(code);
+  const error = new Error(message || getAuthErrorMessage(normalizedCode)) as AuthApiError;
+  error.code = normalizedCode;
   error.status = status;
   return error;
 }
 
 export function getErrorCode(error: unknown): AuthErrorCode {
   if (error && typeof error === "object" && "code" in error) {
-    return String(error.code) as AuthErrorCode;
+    return normalizeAuthErrorCode(String(error.code));
   }
 
   return "UNKNOWN";

@@ -60,7 +60,7 @@ function AppTabs() {
     return <ProfileScreen onTabPress={openAppTab} onLogout={() => void logout()} />;
   }
 
-  return <HomeScreen onTabPress={openAppTab} />;
+  return <HomeScreen onTabPress={openAppTab} onLogout={() => void logout()} />;
 }
 
 export function RootNavigator() {

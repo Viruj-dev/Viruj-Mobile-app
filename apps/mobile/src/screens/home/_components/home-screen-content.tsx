@@ -11,10 +11,10 @@ import PriorityCard from "./priority-card";
 import SectionHeader from "./section-header";
 import WelcomeCard from "./welcome-card";
 
-function HomeContent() {
+function HomeContent({ onLogout }: { onLogout?: () => void }) {
   return (
     <>
-      <HomeHeader />
+      <HomeHeader onLogout={onLogout} />
       <WelcomeCard />
       <ConcernGrid />
       <PriorityCard />
@@ -28,8 +28,10 @@ function HomeContent() {
 }
 
 export default function HomeScreenContent({
+  onLogout,
   onTabPress,
 }: {
+  onLogout?: () => void;
   onTabPress?: (tab: AppTab) => void;
 }) {
   const [cards, setCards] = useState(() => makeEmptyCards(0, 8));
@@ -64,7 +66,7 @@ export default function HomeScreenContent({
             </Text>
           ) : null
         }
-        ListHeaderComponent={<HomeContent />}
+        ListHeaderComponent={<HomeContent onLogout={onLogout} />}
         contentContainerStyle={{ paddingBottom: 132, paddingHorizontal: 22 }}
         data={cards}
         keyExtractor={(item) => item.id}

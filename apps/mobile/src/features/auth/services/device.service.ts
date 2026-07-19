@@ -21,10 +21,14 @@ export async function getOrCreateInstallationId(
   return installationId;
 }
 
+export function getMobileAuthPlatform(os: string): DeviceInfo["platform"] {
+  return os === "ios" ? "ios" : "android";
+}
+
 export async function getDeviceInfo(): Promise<DeviceInfo> {
   const Constants = (await import("expo-constants")).default;
   const { Platform } = await import("react-native");
-  const platform = Platform.OS === "ios" || Platform.OS === "web" ? Platform.OS : "android";
+  const platform = getMobileAuthPlatform(Platform.OS);
 
   return {
     deviceId: await getOrCreateInstallationId(),

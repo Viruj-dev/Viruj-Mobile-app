@@ -7,7 +7,25 @@ export type SecureStorageAdapter = {
   deleteItemAsync(key: string): Promise<void>;
 };
 
+const webStore = new Map<string, string>();
+
+const webMemoryAdapter: SecureStorageAdapter = {
+  async getItemAsync(key) {
+    return webStore.get(key) ?? null;
+  },
+  async setItemAsync(key, value) {
+    webStore.set(key, value);
+  },
+  async deleteItemAsync(key) {
+    webStore.delete(key);
+  },
+};
+
 async function getSecureStore(): Promise<SecureStorageAdapter> {
+  if (typeof document !== "undefined") {
+    return webMemoryAdapter;
+  }
+
   return import("expo-secure-store");
 }
 

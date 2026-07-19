@@ -35,7 +35,7 @@ export type OtpChallenge = {
 
 export type DeviceInfo = {
   deviceId: string;
-  platform: "android" | "ios" | "web";
+  platform: "android" | "ios";
   deviceName: string;
   appVersion: string;
 };

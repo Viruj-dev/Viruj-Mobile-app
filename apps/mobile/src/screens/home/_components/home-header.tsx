@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-export default function HomeHeader() {
+export default function HomeHeader({ onLogout }: { onLogout?: () => void }) {
   return (
     <View className="pt-1">
       <View className="mb-5 flex-row items-center justify-between gap-3">
@@ -23,10 +23,21 @@ export default function HomeHeader() {
           </Text>
         </View>
 
-        <Pressable className="h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-[#E7EDF4] bg-white">
-          <Ionicons name="notifications-outline" size={25} color="#001B49" />
-          <View className="absolute right-[9px] top-2 h-[14px] w-[14px] rounded-full border-2 border-white bg-[#FF335C]" />
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          <Pressable className="h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-[#E7EDF4] bg-white">
+            <Ionicons name="notifications-outline" size={25} color="#001B49" />
+            <View className="absolute right-[9px] top-2 h-[14px] w-[14px] rounded-full border-2 border-white bg-[#FF335C]" />
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel="Log out"
+            accessibilityRole="button"
+            onPress={onLogout}
+            className="h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-[#F4CED4] bg-white"
+          >
+            <Ionicons name="log-out-outline" size={25} color="#B4233C" />
+          </Pressable>
+        </View>
       </View>
     </View>
   );

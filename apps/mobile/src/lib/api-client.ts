@@ -59,6 +59,19 @@ async function parseResponse(response: Response) {
   }
 }
 
+function unwrapPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return payload;
+  }
+
+  const body = payload as Record<string, unknown>;
+
+  if (body.success === true && "data" in body) {
+    return body.data;
+  }
+
+  return payload;
+}
 function readErrorCode(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") {
     return undefined;
@@ -100,7 +113,7 @@ export function createApiClient({
           });
         }
 
-        const session = payload as AuthSession;
+        const session = unwrapPayload(payload) as AuthSession;
         await storage.setRefreshToken(session.refreshToken);
         setAccessToken(session.accessToken);
         onSessionRefreshed?.(session);
@@ -152,7 +165,7 @@ export function createApiClient({
       });
     }
 
-    return payload as T;
+    return unwrapPayload(payload) as T;
   }
 
   return {
