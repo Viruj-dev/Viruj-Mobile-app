@@ -278,6 +278,21 @@ describe("environment configuration", () => {
     });
   });
 
+  test("uses the Expo LAN host for native development", () => {
+    const previousWindow = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {},
+    });
+
+    expect(getApiBaseUrl("192.168.1.3:8081")).toBe("http://192.168.1.3:4000");
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: previousWindow,
+    });
+  });
+
   test("does not require window.location on native", () => {
     const previousWindow = globalThis.window;
     Object.defineProperty(globalThis, "window", {
