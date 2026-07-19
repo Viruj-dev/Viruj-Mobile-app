@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "mobile",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./apps/mobile/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./apps/mobile/assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./apps/mobile/assets/android-icon-foreground.png",
+        "backgroundImage": "./apps/mobile/assets/android-icon-background.png",
+        "monochromeImage": "./apps/mobile/assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./apps/mobile/assets/favicon.png"
+    }
+  }
+}

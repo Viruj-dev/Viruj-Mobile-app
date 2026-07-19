@@ -26,6 +26,7 @@ type AuthContextValue = AuthState & {
   requestOtp: (phoneNumber: string) => Promise<OtpChallenge>;
   verifyOtp: (otp: string) => Promise<AuthSession>;
   refreshSession: () => Promise<void>;
+  completeOnboarding: () => void;
   logout: () => Promise<void>;
 };
 
@@ -118,6 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await applySessionState(session);
   }, [applySessionState]);
 
+  const completeOnboarding = useCallback(() => {
+    dispatch({ type: "ONBOARDING_COMPLETED" });
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -137,9 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestOtp,
       verifyOtp,
       refreshSession,
+      completeOnboarding,
       logout,
     }),
-    [bootstrapSession, logout, refreshSession, requestOtp, state, verifyOtp]
+    [bootstrapSession, completeOnboarding, logout, refreshSession, requestOtp, state, verifyOtp]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

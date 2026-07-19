@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { AuthInput } from "../../../screens/Auth/_components/auth-ui";
 import { formatIndianMobile, toIndianMobileDigits } from "../utils/phone-number";
 
@@ -18,14 +19,18 @@ export function PhoneInput({
       value={formatIndianMobile(mobile)}
       onChangeText={(text) => onChange(toIndianMobileDigits(text))}
       keyboardType="phone-pad"
-      maxLength={11}
       textContentType="telephoneNumber"
       autoComplete="tel"
-      placeholder="98765 43210"
+      placeholder="Enter mobile number"
       error={error}
+      leftInset={116}
       left={
-        <View className="rounded-full bg-[#E9FBF8] px-2.5 py-1">
-          <Text className="text-[12px] font-extrabold text-[#047C9D]">+91</Text>
+        <View className="h-full flex-row items-center">
+          <View className="flex-row items-center gap-2 pr-4">
+            <Text className="text-[15px] font-semibold text-[#111111]">+91</Text>
+            <Ionicons name="chevron-down" size={15} color="#111111" />
+          </View>
+          <View className="h-7 w-px bg-[#DED8D0]" />
         </View>
       }
     />

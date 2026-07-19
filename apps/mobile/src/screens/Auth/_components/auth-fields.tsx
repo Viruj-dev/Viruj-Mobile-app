@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Pressable, Switch, Text, TextInput, View } from "react-native";
 import { palette } from "./auth-palette";
 
@@ -13,12 +13,12 @@ export function Field({
 }) {
   return (
     <View className="mb-[18px]">
-      <Text className="mb-2 text-sm font-extrabold text-[#001B49]">
+      <Text className="mb-2 text-[13px] font-semibold text-[#5F5A55]">
         {label}
       </Text>
       {input}
       {error ? (
-        <Text className="text-[#DC2626] text-[12px] mt-1.5">{error}</Text>
+        <Text className="mt-2 text-[12px] font-semibold text-[#B42318]">{error}</Text>
       ) : null}
     </View>
   );
@@ -28,39 +28,43 @@ export function AuthInput({
   right,
   left,
   error,
+  leftInset = 48,
+  style,
   ...props
-}: React.ComponentProps<typeof TextInput> & {
+}: ComponentProps<typeof TextInput> & {
   right?: ReactNode;
   left?: ReactNode;
   error?: boolean;
+  leftInset?: number;
 }) {
   return (
     <View
-      className={`relative rounded-[18px] border bg-white ${
-        error ? "border-red-300" : "border-[#E5ECF4]"
+      className={`relative rounded-[20px] border bg-white ${
+        error ? "border-[#B42318]" : "border-[#DCD6CE]"
       }`}
       style={{
-        elevation: 2,
-        shadowColor: "#123D78",
-        shadowOffset: { width: 0, height: 6 },
+        elevation: 1,
+        shadowColor: "#2A2118",
+        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.05,
-        shadowRadius: 12,
+        shadowRadius: 18,
       }}
     >
       {left ? (
-        <View className="absolute top-0 left-0 bottom-0 justify-center pl-3.5">
+        <View className="absolute bottom-0 left-0 top-0 justify-center pl-4">
           {left}
         </View>
       ) : null}
       <TextInput
         placeholderTextColor={palette.softMuted}
-        className={`min-h-[58px] px-4 text-[15px] font-semibold text-[#001B49] ${
+        className={`min-h-[58px] px-4 text-[15px] font-semibold text-[#111111] ${
           right ? "pr-14" : ""
-        } ${left ? "pl-12" : ""}`}
+        }`}
+        style={[style, left ? { paddingLeft: leftInset } : null]}
         {...props}
       />
       {right ? (
-        <View className="absolute top-0 right-0 bottom-0 justify-center pr-3.5">
+        <View className="absolute bottom-0 right-0 top-0 justify-center pr-4">
           {right}
         </View>
       ) : null}
@@ -77,7 +81,7 @@ export function ToggleTextButton({
 }) {
   return (
     <Pressable onPress={onPress} hitSlop={8}>
-      <Text className="text-[12px] font-extrabold text-[#059669]">{label}</Text>
+      <Text className="text-[12px] font-black text-[#13945F]">{label}</Text>
     </Pressable>
   );
 }
@@ -97,9 +101,9 @@ export function RememberSwitch({
         value={value}
         onValueChange={onValueChange}
         thumbColor="#FFFFFF"
-        trackColor={{ false: "#D1D5DB", true: palette.brand }}
+        trackColor={{ false: "#D6D0C8", true: palette.brand }}
       />
-      <Text className="text-[12px] font-semibold text-[#536682]">{label}</Text>
+      <Text className="text-[12px] font-semibold text-[#5F5A55]">{label}</Text>
     </View>
   );
 }

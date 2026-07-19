@@ -4,11 +4,8 @@ const DEFAULT_API_BASE_URL = "https://api.virujhealth.com";
 const LOCAL_WEB_API_BASE_URL = "http://localhost:4000";
 
 function isLocalWebPreview(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const hostname = typeof window === "undefined" ? undefined : window.location?.hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1";
 }
 
 export function getApiBaseUrl(): string {

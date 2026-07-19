@@ -27,19 +27,26 @@ export function OtpInput({
     <>
       <Pressable
         onPress={() => inputRef.current?.focus()}
-        className="mb-3 flex-row justify-between"
+        className="mb-4 flex-row justify-between gap-2"
         disabled={disabled}
       >
         {digits.map((digit, index) => (
           <View
             key={index}
-            className={`h-14 w-12 items-center justify-center rounded-2xl border ${
+            className={`h-14 flex-1 items-center justify-center rounded-[18px] border ${
               digit
-                ? "border-[#0E9996] bg-[#E9FBF8]"
-                : "border-[#E5ECF4] bg-white"
+                ? "border-[#18A66B] bg-white"
+                : "border-[#DED8D0] bg-white"
             }`}
+            style={{
+              elevation: digit ? 2 : 0,
+              shadowColor: "#18A66B",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: digit ? 0.09 : 0,
+              shadowRadius: 14,
+            }}
           >
-            <Text className="text-xl font-extrabold text-[#001B49]">{digit}</Text>
+            <Text className="text-xl font-bold text-[#111111]">{digit}</Text>
           </View>
         ))}
       </Pressable>

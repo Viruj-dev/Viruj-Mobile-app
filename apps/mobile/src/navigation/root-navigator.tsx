@@ -76,7 +76,7 @@ export function RootNavigator() {
   }
 
   if (route === "onboarding") {
-    return <OnboardingCarousel onComplete={() => void auth.refreshSession()} />;
+    return <OnboardingCarousel onComplete={auth.completeOnboarding} />;
   }
 
   return <AppTabs />;

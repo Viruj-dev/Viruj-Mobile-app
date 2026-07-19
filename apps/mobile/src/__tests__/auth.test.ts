@@ -48,6 +48,7 @@ describe("phone number utilities", () => {
     expect(isValidIndianMobile("98765 43210")).toBe(true);
     expect(isValidIndianMobile("12345 43210")).toBe(false);
     expect(normalizeIndianPhoneNumber("+91 98765 43210")).toBe("+919876543210");
+    expect(normalizeIndianPhoneNumber("09876543210")).toBe("+919876543210");
   });
 
   test("formats and masks phone numbers", () => {
@@ -150,6 +151,17 @@ describe("api response handling", () => {
 
     await expect(client.request("/otp", { method: "POST" })).resolves.toEqual({ challengeId: "c1" });
   });
+
+  test("reports network failures clearly", async () => {
+    const fetcher = mock(async () => {
+      throw new TypeError("Network request failed");
+    }) as unknown as typeof fetch;
+    const client = createApiClient({ baseUrl: "https://api.test", fetcher });
+
+    await expect(client.request("/otp", { method: "POST" })).rejects.toThrow(
+      "Cannot reach the Viruj API"
+    );
+  });
 });
 describe("session and refresh behavior", () => {
   test("bootstraps without token to unauthenticated reducer state", () => {
@@ -239,6 +251,16 @@ describe("logout and navigation guards", () => {
     expect(selectRootRoute("requiresOnboarding")).toBe("onboarding");
     expect(selectRootRoute("authenticated")).toBe("app");
   });
+
+  test("onboarding completion enters the app locally", () => {
+    const needsOnboarding = authReducer(initialAuthState, {
+      type: "AUTHENTICATED",
+      session: { ...session, requiresOnboarding: true },
+    });
+    const completed = authReducer(needsOnboarding, { type: "ONBOARDING_COMPLETED" });
+
+    expect(completed.status).toBe("authenticated");
+  });
 });
 describe("environment configuration", () => {
   test("uses local API for Expo web preview on localhost", () => {
@@ -249,6 +271,21 @@ describe("environment configuration", () => {
     });
 
     expect(getApiBaseUrl()).toBe("http://localhost:4000");
+
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: previousWindow,
+    });
+  });
+
+  test("does not require window.location on native", () => {
+    const previousWindow = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {},
+    });
+
+    expect(getApiBaseUrl()).toBe("https://api.virujhealth.com");
 
     Object.defineProperty(globalThis, "window", {
       configurable: true,

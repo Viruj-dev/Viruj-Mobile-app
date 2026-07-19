@@ -52,6 +52,7 @@ export type AuthErrorCode =
   | "AUTH_REFRESH_TOKEN_REUSED"
   | "AUTH_SESSION_REVOKED"
   | "AUTH_UNAUTHORIZED"
+  | "NETWORK_ERROR"
   | "UNKNOWN";
 
 export type AuthApiError = Error & {

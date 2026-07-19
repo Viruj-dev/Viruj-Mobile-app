@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import {
   AuthHeader,
   AuthScreen,
@@ -17,11 +16,19 @@ export function PhoneAuthScreen({ onOtpRequested }: { onOtpRequested: () => void
   const { requestOtp } = useAuth();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState<string>();
+  const [touched, setTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isValid = isValidIndianMobile(phone);
 
   const submit = async () => {
-    if (!isValid || isSubmitting) {
+    setTouched(true);
+
+    if (!isValid) {
+      setError("Enter a valid 10-digit mobile number");
+      return;
+    }
+
+    if (isSubmitting) {
       return;
     }
 
@@ -40,32 +47,40 @@ export function PhoneAuthScreen({ onOtpRequested }: { onOtpRequested: () => void
   return (
     <AuthScreen>
       <AuthHeader
-        title="Sign in with phone"
-        subtitle="Enter your Indian mobile number and we will send a secure one-time code."
-        icon={<Ionicons name="call-outline" size={32} color="#0E9996" />}
+        title="Welcome back"
+        subtitle="Sign in to continue your care journey."
       />
 
       {error ? <StatusNotice tone="danger" message={error} /> : null}
 
       <Field
         label="Mobile number"
-        error={phone && !isValid ? "Enter a valid 10-digit mobile number" : undefined}
-        input={<PhoneInput value={phone} onChange={setPhone} error={Boolean(error)} />}
+        error={touched && phone && !isValid ? "Enter a valid 10-digit mobile number" : undefined}
+        input={
+          <PhoneInput
+            value={phone}
+            onChange={(value) => {
+              setPhone(value);
+              setError(undefined);
+            }}
+            error={Boolean(error)}
+          />
+        }
       />
 
       {phone ? (
-        <Text className="mb-3 text-[13px] font-semibold text-[#536682]">
+        <Text className="mb-4 text-[13px] font-medium text-[#5F5A55]">
           Sending to +91 {formatIndianMobile(phone)}
         </Text>
       ) : (
-        <View className="mb-3" />
+        <View className="mb-4" />
       )}
 
       <PrimaryButton
-        label="Request OTP"
+        label="Continue with OTP"
         onPress={submit}
         loading={isSubmitting}
-        disabled={!isValid}
+        disabled={false}
       />
     </AuthScreen>
   );

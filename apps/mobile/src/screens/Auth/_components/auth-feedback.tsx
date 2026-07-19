@@ -3,10 +3,10 @@ import { Modal, Pressable, Text, View } from "react-native";
 
 export function Divider({ label }: { label: string }) {
   return (
-    <View className="flex-row items-center gap-3 my-8">
-      <View className="h-[1px] flex-1 bg-[#E5ECF4]" />
-      <Text className="text-[13px] font-semibold text-[#7B8AA6]">{label}</Text>
-      <View className="h-[1px] flex-1 bg-[#E5ECF4]" />
+    <View className="my-8 flex-row items-center gap-4">
+      <View className="h-px flex-1 bg-[#E1DBD3]" />
+      <Text className="text-[13px] font-medium text-[#8C867F]">{label}</Text>
+      <View className="h-px flex-1 bg-[#E1DBD3]" />
     </View>
   );
 }
@@ -21,12 +21,10 @@ export function FooterLink({
   onPress: () => void;
 }) {
   return (
-    <View className="mt-8 flex-row items-center justify-center flex-wrap">
-      <Text className="text-sm font-semibold text-[#536682]">{prompt} </Text>
+    <View className="mt-8 flex-row flex-wrap items-center justify-center">
+      <Text className="text-sm font-medium text-[#5F5A55]">{prompt} </Text>
       <Pressable onPress={onPress} hitSlop={8}>
-        <Text className="text-sm font-extrabold text-[#059669]">
-          {actionLabel}
-        </Text>
+        <Text className="text-sm font-black text-[#13945F]">{actionLabel}</Text>
       </Pressable>
     </View>
   );
@@ -45,20 +43,18 @@ export function StatusNotice({
 }) {
   return (
     <View
-      className={`rounded-2xl border p-4 mb-[18px] ${
+      className={`mb-[18px] rounded-[18px] border px-4 py-3 ${
         tone === "success"
-          ? "bg-[#E9FBF8] border-[#BDEFE3]"
-          : "bg-red-50 border-red-200"
+          ? "border-[#CBEEDB] bg-[#F0FBF5]"
+          : "border-[#F3C5C0] bg-[#FFF4F2]"
       }`}
     >
       {title ? (
-        <Text className="mb-1 text-[15px] font-extrabold text-[#001B49]">
-          {title}
-        </Text>
+        <Text className="mb-1 text-[14px] font-black text-[#111111]">{title}</Text>
       ) : null}
       <Text
-        className={`text-[13px] ${
-          tone === "success" ? "text-[#047C9D]" : "text-red-700"
+        className={`text-[13px] font-medium leading-5 ${
+          tone === "success" ? "text-[#0E754A]" : "text-[#9F1F18]"
         }`}
       >
         {message}
@@ -77,7 +73,7 @@ export function AuthModal({
 }) {
   return (
     <Modal transparent visible={visible} animationType="fade">
-      <View className="flex-1 bg-black/40 justify-center px-6 py-8">
+      <View className="flex-1 justify-center bg-black/40 px-6 py-8">
         {children}
       </View>
     </Modal>

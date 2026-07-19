@@ -26,6 +26,7 @@ type AuthAction =
   | { type: "OTP_REQUESTED"; challenge: OtpChallenge & { phoneNumber: string } }
   | { type: "AUTHENTICATED"; session: AuthSession }
   | { type: "SESSION_STATE"; user: SafeMobileUser; requiresOnboarding: boolean }
+  | { type: "ONBOARDING_COMPLETED" }
   | { type: "LOGGED_OUT"; errorCode?: string };
 
 function statusFromOnboarding(requiresOnboarding: boolean): AuthStatus {
@@ -65,6 +66,8 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
         status: statusFromOnboarding(action.requiresOnboarding),
         user: action.user,
       };
+    case "ONBOARDING_COMPLETED":
+      return { ...state, status: "authenticated" };
     default:
       return state;
   }

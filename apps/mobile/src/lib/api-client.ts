@@ -72,6 +72,21 @@ function unwrapPayload(payload: unknown) {
 
   return payload;
 }
+function createNetworkError(error: unknown) {
+  return createAuthApiError({
+    code: "NETWORK_ERROR",
+    message: error instanceof Error ? `Cannot reach the Viruj API: ${error.message}` : undefined,
+  });
+}
+
+async function sendRequest(fetcher: typeof fetch, input: RequestInfo | URL, init?: RequestInit) {
+  try {
+    return await fetcher(input, init);
+  } catch (error) {
+    throw createNetworkError(error);
+  }
+}
+
 function readErrorCode(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") {
     return undefined;
@@ -99,7 +114,7 @@ export function createApiClient({
         }
 
         const deviceId = await getDeviceId();
-        const response = await fetcher(`${baseUrl}/api/mobile/auth/refresh-token`, {
+        const response = await sendRequest(fetcher, `${baseUrl}/api/mobile/auth/refresh-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken, deviceId }),
@@ -138,7 +153,7 @@ export function createApiClient({
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    const response = await fetcher(`${baseUrl}${path}`, {
+    const response = await sendRequest(fetcher, `${baseUrl}${path}`, {
       ...options,
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),

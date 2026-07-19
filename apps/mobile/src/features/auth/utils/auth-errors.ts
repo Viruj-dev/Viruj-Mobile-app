@@ -12,6 +12,7 @@ const MESSAGES: Record<AuthErrorCode, string> = {
   AUTH_REFRESH_TOKEN_REUSED: "Your session was reset for security. Please sign in again.",
   AUTH_SESSION_REVOKED: "Your session has ended. Please sign in again.",
   AUTH_UNAUTHORIZED: "Please sign in again.",
+  NETWORK_ERROR: "Cannot reach the Viruj API. Check your backend URL and network.",
   UNKNOWN: "Something went wrong. Please try again.",
 };
 

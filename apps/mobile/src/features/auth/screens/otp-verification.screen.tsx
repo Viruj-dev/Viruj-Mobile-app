@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import {
   AuthBackButton,
   AuthHeader,
@@ -100,7 +99,6 @@ export function OtpVerificationScreen({
         align="left"
         title="Verify OTP"
         subtitle={`Enter the 6-digit code sent to ${maskPhoneNumber(challenge.phoneNumber)}.`}
-        icon={<Ionicons name="phone-portrait-outline" size={34} color="#0E9996" />}
       />
 
       {shouldShowDevelopmentOtp(__DEV__, challenge.developmentOtp) ? (
@@ -116,10 +114,10 @@ export function OtpVerificationScreen({
       <OtpInput value={code} onChange={setCode} disabled={isVerifying} />
 
       <View className="mb-5 flex-row justify-between">
-        <Text className="text-[12px] font-semibold text-[#536682]">
+        <Text className="text-[12px] font-medium text-[#5F5A55]">
           Expires in {formatCountdown(expiresIn)}
         </Text>
-        <Text className="text-[12px] font-semibold text-[#536682]">
+        <Text className="text-[12px] font-medium text-[#5F5A55]">
           {retryAfter > 0 ? `Resend in ${formatCountdown(retryAfter)}` : "Resend available"}
         </Text>
       </View>
@@ -132,7 +130,7 @@ export function OtpVerificationScreen({
       />
 
       <View className="mt-6 flex-row items-center justify-center">
-        <Text className="text-sm font-semibold text-[#536682]">
+        <Text className="text-sm font-medium text-[#5F5A55]">
           Did not receive it?{" "}
         </Text>
         <ToggleTextButton
