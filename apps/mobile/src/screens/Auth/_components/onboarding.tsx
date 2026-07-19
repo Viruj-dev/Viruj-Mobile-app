@@ -1,8 +1,6 @@
 import { View, Text, Image, Pressable } from "react-native";
 import { useState } from "react";
-import Animated, { FadeInRight, FadeOutLeft } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
 
 interface Props {
   onComplete: () => void;
@@ -46,11 +44,6 @@ export default function OnboardingCarousel({ onComplete }: Props) {
     }
   };
 
-  const gesture = Gesture.Pan().onEnd((e) => {
-    if (e.translationX < -50) nextSlide();
-    if (e.translationX > 50) prevSlide();
-  });
-
   return (
     <View className="flex-1 items-center justify-center bg-[#F8FBFF]">
       <View className="h-full w-full bg-[#F8FBFF]">
@@ -70,49 +63,42 @@ export default function OnboardingCarousel({ onComplete }: Props) {
           </Pressable>
         ) : null}
 
-        <GestureDetector gesture={gesture}>
-          <Animated.View
-            key={currentSlide}
-            entering={FadeInRight}
-            exiting={FadeOutLeft}
-            className="flex-1"
-          >
-            <View className="h-[58%] overflow-hidden rounded-b-[32px] bg-[#EAF4FF]">
-              <Image
-                source={slides[currentSlide].image}
-                className="h-full w-full"
-                resizeMode="cover"
-              />
-              <View className="absolute bottom-0 left-0 right-0 h-28 bg-[#001B4918]" />
+        <View key={currentSlide} className="flex-1">
+          <View className="h-[58%] overflow-hidden rounded-b-[32px] bg-[#EAF4FF]">
+            <Image
+              source={slides[currentSlide].image}
+              className="h-full w-full"
+              resizeMode="cover"
+            />
+            <View className="absolute bottom-0 left-0 right-0 h-28 bg-[#001B4918]" />
+          </View>
+
+          <View className="flex-1 items-center justify-between px-8 py-7">
+            <View className="items-center">
+              <Text className="mb-3 text-center text-[28px] font-extrabold leading-[34px] tracking-normal text-[#001B49]">
+                {slides[currentSlide].title}
+              </Text>
+
+              <Text className="text-center text-[15px] font-medium leading-6 text-[#536682]">
+                {slides[currentSlide].description}
+              </Text>
             </View>
 
-            <View className="flex-1 items-center justify-between px-8 py-7">
-              <View className="items-center">
-                <Text className="mb-3 text-center text-[28px] font-extrabold leading-[34px] tracking-normal text-[#001B49]">
-                  {slides[currentSlide].title}
-                </Text>
-
-                <Text className="text-center text-[15px] font-medium leading-6 text-[#536682]">
-                  {slides[currentSlide].description}
-                </Text>
-              </View>
-
-              <View className="mt-6 flex-row gap-2">
-                {slides.map((_, index) => (
-                  <Pressable
-                    key={index}
-                    onPress={() => setCurrentSlide(index)}
-                    className={`rounded-full ${
-                      index === currentSlide
-                        ? "h-3 w-8 bg-[#0E9996]"
-                        : "h-3 w-3 bg-[#CCD6E2]"
-                    }`}
-                  />
-                ))}
-              </View>
+            <View className="mt-6 flex-row gap-2">
+              {slides.map((_, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => setCurrentSlide(index)}
+                  className={`rounded-full ${
+                    index === currentSlide
+                      ? "h-3 w-8 bg-[#0E9996]"
+                      : "h-3 w-3 bg-[#CCD6E2]"
+                  }`}
+                />
+              ))}
             </View>
-          </Animated.View>
-        </GestureDetector>
+          </View>
+        </View>
 
         <View className="px-8 pb-10">
           <Pressable

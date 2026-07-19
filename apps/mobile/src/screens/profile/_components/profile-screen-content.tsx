@@ -10,8 +10,10 @@ import TopBar from "./top-bar";
 
 export default function ProfileScreenContent({
   onTabPress,
+  onLogout,
 }: {
   onTabPress?: (tab: AppTab) => void;
+  onLogout?: () => void;
 }) {
   return (
     <SafeAreaView className="flex-1 bg-[#F8F9FA]">
@@ -28,7 +30,7 @@ export default function ProfileScreenContent({
         <HealthRecords />
         <MenuGroup title="Account Settings" rows={settings} />
         <MenuGroup title="Support" rows={support} />
-        <Footer />
+        <Footer onLogout={onLogout} />
       </ScrollView>
 
       <AppTabBar activeTab="Profile" onTabPress={onTabPress} />

@@ -1,10 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-export default function Footer() {
+export default function Footer({ onLogout }: { onLogout?: () => void }) {
   return (
     <View className="items-center pb-[26px]">
-      <Pressable className="mb-[40px] h-[58px] w-full flex-row items-center justify-center rounded-[16px] bg-[#FFD3D0]">
+      <Pressable
+        onPress={onLogout}
+        className="mb-[40px] h-[58px] w-full flex-row items-center justify-center rounded-[16px] bg-[#FFD3D0]"
+      >
         <Ionicons name="log-out-outline" size={22} color="#A60000" />
         <Text className="ml-[12px] text-[17px] font-semibold text-[#A60000]">
           Logout
