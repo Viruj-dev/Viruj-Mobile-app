@@ -66,6 +66,7 @@ export default function AppTabBar({
                       : active
                         ? "#059669"
                         : "#111111"
+                }
               />
             </View>
             <Text
