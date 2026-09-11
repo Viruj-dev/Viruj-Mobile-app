@@ -29,7 +29,7 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
     setUnauthorized(handler: () => void) { unauthorized = handler; },
     async clear() { generation++; await storage.clear(); },
     async hasSession() { return Boolean(await storage.get()); },
-    async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; public?: boolean } = {}): Promise<T> {
+    async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; public?: boolean; binary?: boolean } = {}): Promise<T> {
       if (!path.startsWith("/") || path.startsWith("//") || path.includes("..")) throw new Error("Invalid API path");
       const version = generation;
       const token = options.public ? null : await storage.get();
@@ -44,7 +44,7 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
       const timer = setTimeout(abort, path.includes("/ai/") ? 90_000 : 20_000);
       try {
         const response = await fetcher(`${origin}/api/mobile${path}`, { method: options.method || "GET", headers, credentials: "omit", signal: controller.signal, body: options.body ? multipart ? options.body as FormData : JSON.stringify(options.body) : undefined });
-        const data = await response.json().catch(() => null);
+        const data = options.binary && response.ok ? await response.arrayBuffer() : await response.json().catch(() => null);
         if (!response.ok) {
           if (response.status === 401 && token && version === generation) { generation++; await storage.clear(); unauthorized(); }
           const message = typeof data?.error === "string" ? data.error : data?.error?.message || data?.message;

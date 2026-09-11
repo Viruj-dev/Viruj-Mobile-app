@@ -1,11 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import { ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "./api";
 
 export const colors = { primary: "#B91C1C", deep: "#7F1D1D", ink: "#2B1C1C", muted: "#786666", bg: "#FCF9F7", line: "#EEE1DE", soft: "#FCECEA", white: "#FFFFFF", red: "#AC3434" };
 export type Icon = keyof typeof Ionicons.glyphMap;
+export function useBack(active: boolean, back: () => void) {
+  useEffect(() => { if (!active) return; const subscription = BackHandler.addEventListener("hardwareBackPress", () => { back(); return true; }); return () => subscription.remove(); }, [active, back]);
+}
 export function Glyph({ name, color = colors.primary, size = 24 }: { name: Icon; color?: string; size?: number }) { return <Ionicons name={name} color={color} size={size} />; }
 export function Button({ title, onPress, busy, secondary, disabled, icon }: { title: string; onPress(): void; busy?: boolean; secondary?: boolean; disabled?: boolean; icon?: Icon }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: disabled || busy, busy }} disabled={disabled || busy} onPress={onPress} style={({ pressed }) => [s.button, secondary && s.secondary, (pressed || disabled || busy) && { opacity: 0.6 }]}>{busy ? <ActivityIndicator color={secondary ? colors.primary : "white"} /> : <>{icon && <Glyph name={icon} color={secondary ? colors.deep : "white"} size={20} />}<Text style={[s.buttonText, secondary && { color: colors.deep }]}>{title}</Text></>}</Pressable>;

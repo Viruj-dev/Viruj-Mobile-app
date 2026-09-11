@@ -8,7 +8,7 @@ import { Community } from "./community";
 import { Booking, Health } from "./health";
 import { Home, type Destination } from "./home";
 import { Inbox } from "./inbox";
-import { EditProfile, Feedback, Profile } from "./profile";
+import { DeleteAccount, EditProfile, Feedback, Profile } from "./profile";
 import { useSession } from "./session";
 import { Button, colors, ErrorText, Glyph, ResourceState, Row, Screen, useResource, type Icon } from "./ui";
 import { type CareItem } from "./api";
@@ -35,6 +35,7 @@ function Workspace() {
   else if (name === "notifications") screen = <Inbox back={back} />;
   else if (name === "edit-profile") screen = <EditProfile back={back} />;
   else if (name === "feedback") screen = <Feedback back={back} />;
+  else if (name === "delete-account") screen = <DeleteAccount back={back} />;
   else if (name === "health") screen = <Health />;
   else if (name === "chat") screen = <Chat />;
   else if (name === "community") screen = <Community />;

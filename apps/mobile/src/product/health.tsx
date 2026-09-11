@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { api, type Appointment, type Profile } from "./api";
 import { useSession } from "./session";
 import * as Crypto from "expo-crypto";
 import { Reports } from "./reports";
-import { Body, Button, Card, colors, Empty, ErrorText, Field, Heading, ResourceState, Screen, useResource } from "./ui";
+import { Body, Button, Card, colors, Empty, ErrorText, Field, Heading, ResourceState, Screen, useResource, useBack } from "./ui";
 export function Health() {
   const [reports, setReports] = useState(false);
   const result = useResource<{ appointments: Appointment[] }>("/appointments");
+  useBack(reports, () => setReports(false));
   if (reports) return <Reports back={() => setReports(false)} />;
   return <Screen title="My health" subtitle="YOUR CARE"><Button title="AI reports" secondary onPress={() => setReports(true)} /><Heading>Appointments</Heading><ResourceState {...result} />{result.data?.appointments.length === 0 && <Empty title="No appointments yet" detail="Your appointment requests will appear here." />}{result.data?.appointments.map(item => <Card key={item.id}><View style={{ alignSelf: "flex-start", backgroundColor: colors.soft, borderRadius: 8, padding: 8 }}><Text style={{ color: colors.deep, fontWeight: "600", textTransform: "capitalize", fontSize: 12 }}>{item.status.replaceAll("_", " ")}</Text></View><Heading>{item.doctorName}</Heading><Body>{item.hospitalName}</Body><Body>{new Date(item.appointmentDate).toLocaleDateString()} · {item.appointmentTime}</Body><Body>{item.appointmentMode === "video" ? "Video consultation" : "In person"}</Body>{item.reason && <Body>{item.reason}</Body>}</Card>)}</Screen>;
 }
@@ -17,6 +19,7 @@ export function Booking({ doctorId, back, complete }: { doctorId: string; back()
   const [date, setDate] = useState(""); const [time, setTime] = useState(""); const [reason, setReason] = useState(""); const [mode, setMode] = useState("in-person");
   const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [success, setSuccess] = useState(false);
   const [requestId] = useState(() => Crypto.randomUUID());
+  const [picker, setPicker] = useState<"date" | "time" | null>(null);
   async function submit() {
     if (busy || success) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || Date.parse(`${date}T23:59:59`) < Date.now()) { setError("Enter a future date as YYYY-MM-DD."); return; }
@@ -25,5 +28,5 @@ export function Booking({ doctorId, back, complete }: { doctorId: string; back()
     try { await api.request("/appointments", { method: "POST", body: { requestId, doctorId: Number(doctorId), selectedDate: date, selectedTimeSlot: time.trim().toUpperCase(), appointmentType: mode, fullName: profile.data?.name, additionalComments: reason.trim() } }); setSuccess(true); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not request appointment."); } finally { setBusy(false); }
   }
-  return <Screen title={success ? "Request received" : "Request appointment"} back={back}>{success ? <><Empty icon="checkmark-circle-outline" title="Awaiting approval" detail="You’ll see updates in My health." /><Button title="View appointments" onPress={complete} /></> : <><ResourceState {...profile} /><Body>This is a preferred time. Your provider will confirm availability.</Body><Field label="Date · YYYY-MM-DD" value={date} onChangeText={setDate} placeholder="2026-09-20" keyboardType="numbers-and-punctuation" /><Field label="Preferred time" value={time} onChangeText={setTime} placeholder="10:30 AM" autoCapitalize="characters" /><View style={{ flexDirection: "row", gap: 10 }}><Button title="In person" secondary={mode !== "in-person"} onPress={() => setMode("in-person")} /><Button title="Video" secondary={mode !== "video"} onPress={() => setMode("video")} /></View><Field label="Reason (optional)" value={reason} onChangeText={setReason} multiline maxLength={2000} /><ErrorText message={error} /><Button title="Send request" busy={busy} disabled={!profile.data} onPress={() => void submit()} /></>}</Screen>;
+  return <Screen title={success ? "Request received" : "Request appointment"} back={back}>{success ? <><Empty icon="checkmark-circle-outline" title="Awaiting approval" detail="You’ll see updates in My health." /><Button title="View appointments" onPress={complete} /></> : <><ResourceState {...profile} /><Body>This is a preferred time. Your provider will confirm availability.</Body>{Platform.OS === "web" ? <><Field label="Date · YYYY-MM-DD" value={date} onChangeText={setDate} placeholder="2026-09-20" /><Field label="Preferred time" value={time} onChangeText={setTime} placeholder="10:30 AM" /></> : <><Button title={date || "Choose date"} secondary onPress={() => setPicker("date")} /><Button title={time || "Choose time"} secondary onPress={() => setPicker("time")} />{picker && <DateTimePicker mode={picker} value={new Date()} minimumDate={picker === "date" ? new Date() : undefined} onChange={(event, value) => { const mode = picker; setPicker(null); if (event.type !== "set" || !value) return; if (mode === "date") setDate(`${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2,"0")}-${String(value.getDate()).padStart(2,"0")}`); else setTime(`${value.getHours() % 12 || 12}:${String(value.getMinutes()).padStart(2,"0")} ${value.getHours() >= 12 ? "PM" : "AM"}`); }} />}</>}<View style={{ flexDirection: "row", gap: 10 }}><Button title="In person" secondary={mode !== "in-person"} onPress={() => setMode("in-person")} /><Button title="Video" secondary={mode !== "video"} onPress={() => setMode("video")} /></View><Field label="Reason (optional)" value={reason} onChangeText={setReason} multiline maxLength={2000} /><ErrorText message={error} /><Button title="Send request" busy={busy} disabled={!profile.data} onPress={() => void submit()} /></>}</Screen>;
 }

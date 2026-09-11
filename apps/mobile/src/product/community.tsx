@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Alert, Image, Share, View } from "react-native";
 import { api, type Post, webOrigin } from "./api";
 import { useSession } from "./session";
-import { Body, Button, Card, Empty, ErrorText, Field, Heading, ResourceState, Screen, useResource } from "./ui";
+import { Body, Button, Card, Empty, ErrorText, Field, Heading, ResourceState, Screen, useResource, useBack } from "./ui";
 type Comment = { id: string; content: string; author: { name: string } | null; replies?: Comment[] };
 export function Community() {
   const { session } = useSession(); const [page, setPage] = useState(1);
   const feed = useResource<{ data: Post[]; pagination?: { hasMore?: boolean } }>(`/community/feed?page=${page}&limit=10`);
   const [post, setPost] = useState<Post | null>(null); const [compose, setCompose] = useState(false); const [text, setText] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   async function publish() { if (busy || !text.trim()) return; setBusy(true); setError(""); try { await api.request("/community/posts", { method: "POST", body: { content: text.trim(), type: "update" } }); setCompose(false); setText(""); feed.reload(); } catch (e) { setError(e instanceof Error ? e.message : "Could not post."); } finally { setBusy(false); } }
+  useBack(Boolean(post || compose), () => { setPost(null); setCompose(false); });
   if (post) return <PostDetail post={post} back={() => { setPost(null); feed.reload(); }} own={post.author?.id === session!.user.id} />;
   if (compose) return <Screen title="New post" back={() => setCompose(false)}><Field label="Share an update" value={text} onChangeText={setText} multiline maxLength={5000} /><Body>Posts are visible to the community.</Body><ErrorText message={error} /><Button title="Post" busy={busy} disabled={!text.trim()} onPress={() => void publish()} /></Screen>;
   return <Screen title="Community" subtitle="CONNECT"><Button title="Share an update" secondary icon="add" onPress={() => setCompose(true)} /><ResourceState {...feed} />{feed.data?.data.length === 0 && <Empty title="No posts yet" />}{feed.data?.data.map(item => <Card key={item.id}><Heading>{item.author?.name || "Community member"}</Heading><Body>{new Date(item.createdAt).toLocaleDateString()}</Body><Body>{item.content}</Body>{item.imageUrl && <Image source={{ uri: item.imageUrl }} style={{ height: 200, width: "100%", borderRadius: 14 }} />}<Button title={`${item.likeCount || 0} likes · ${item.commentCount || 0} comments`} secondary onPress={() => setPost(item)} /></Card>)}<View style={{ flexDirection: "row", gap: 10 }}>{page > 1 && <Button title="Previous" secondary onPress={() => setPage(p => p - 1)} />}{feed.data?.data.length === 10 && <Button title="Next page" secondary onPress={() => setPage(p => p + 1)} />}</View></Screen>;
