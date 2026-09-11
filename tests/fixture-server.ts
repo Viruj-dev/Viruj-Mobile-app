@@ -5,7 +5,7 @@ const appointments: Record<string, unknown>[] = [];
 const posts = [{ id: "test-post", content: "A synthetic community post for interface testing.", type: "update", author: { id: "test-author", name: "Test Community" }, createdAt: new Date().toISOString(), likeCount: 0, commentCount: 0 }];
 const sessions: Record<string, unknown>[] = [];
 let loggedIn = false;
-const server = Bun.serve({ hostname: "127.0.0.1", port: 8093, async fetch(request) {
+const server = Bun.serve({ hostname: process.env.FIXTURE_HOST || "127.0.0.1", port: Number(process.env.FIXTURE_PORT || 8093), async fetch(request) {
   const url = new URL(request.url); const path = url.pathname.replace("/api/mobile", "");
   const headers = { "Access-Control-Allow-Origin": "http://localhost:8094", "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS", "Access-Control-Expose-Headers": "set-auth-token" };
   const json = (data: unknown, status = 200, more = {}) => Response.json(data, { status, headers: { ...headers, ...more } });
