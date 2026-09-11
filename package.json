@@ -5,7 +5,7 @@
     "apps/mobile"
   ],
   "scripts": {
-    "dev:api": "bun --cwd ../viruj-backend/mobile dev",
+    "dev:api": "bun --cwd ../virujhealthapp run dev",
     "dev:mobile": "bun --cwd apps/mobile start",
     "dev": "bun run dev:api & bun run dev:mobile"
   },
@@ -13,8 +13,8 @@
     "babel-preset-expo": "~54.0.0"
   },
   "resolutions": {
-    "expo-asset": "12.0.12",
-    "expo-constants": "18.0.13"
+    "expo-asset": "12.0.13",
+    "expo-constants": "18.0.14"
   },
   "dependencies": {
     "react-dom": "19.1.0",

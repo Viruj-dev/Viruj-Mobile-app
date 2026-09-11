@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, Image, Linking, View } from "react-native";
 import { api, type Profile as ProfileData, webOrigin } from "./api";
 import { useSession } from "./session";
+import { pickImage } from "./media";
 import { type Navigate } from "./home";
 import { Body, Button, Card, ErrorText, Field, Heading, ResourceState, Row, Screen, useResource } from "./ui";
 export function Profile({ navigate }: { navigate: Navigate }) {
@@ -13,6 +14,7 @@ export function EditProfile({ back }: { back(): void }) {
   const { session } = useSession(); const profile = useResource<ProfileData>(`/users/${session!.user.id}`);
   const [form, setForm] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [saved, setSaved] = useState(false);
   useEffect(() => { if (profile.data) setForm(Object.fromEntries(Object.entries(profile.data).filter(([, value]) => typeof value === "string" || typeof value === "number").map(([key, value]) => [key, String(value)]))); }, [profile.data]);
+  async function photo() { setError(""); try { const image = await pickImage(); if (image) { await api.request(`/users/${session!.user.id}`, { method: "PATCH", body: { image: image.dataUrl } }); profile.reload(); } } catch (e) { setError(e instanceof Error ? e.message : "Could not update photo."); } }
   async function save() {
     if (busy) return; if (!form.name?.trim()) { setError("Enter your name."); return; }
     const age = form.age ? Number(form.age) : null;
@@ -21,7 +23,7 @@ export function EditProfile({ back }: { back(): void }) {
     try { await api.request(`/users/${session!.user.id}`, { method: "PATCH", body: { ...Object.fromEntries(["name", "phoneNumber", "address", "bloodGroup", "height", "weight", "medicalHistory", "gender"].map(key => [key, form[key]?.trim() || null])), age, onboardingCompleted: true } }); setSaved(true); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not save."); } finally { setBusy(false); }
   }
-  return <Screen title="Edit profile" back={back}><ResourceState {...profile} />{profile.data && <>{[["name", "Full name"], ["phoneNumber", "Phone"], ["age", "Age"], ["gender", "Gender · male, female, other"], ["bloodGroup", "Blood group"], ["height", "Height"], ["weight", "Weight"], ["address", "Address"], ["medicalHistory", "Medical history"]].map(([key, label]) => <Field key={key} label={label!} value={form[key!] || ""} onChangeText={value => { setSaved(false); setForm(f => ({ ...f, [key!]: value })); }} keyboardType={key === "age" ? "number-pad" : key === "phoneNumber" ? "phone-pad" : "default"} multiline={key === "medicalHistory"} autoCapitalize={key === "gender" ? "none" : "sentences"} />)}<ErrorText message={error} />{saved && <Body>Profile saved.</Body>}<Button title="Save changes" busy={busy} onPress={() => void save()} /></>}</Screen>;
+  return <Screen title="Edit profile" back={back}><ResourceState {...profile} />{profile.data && <><Button title="Change photo" secondary onPress={() => void photo()} />{[["name", "Full name"], ["phoneNumber", "Phone"], ["age", "Age"], ["gender", "Gender · male, female, other"], ["bloodGroup", "Blood group"], ["height", "Height"], ["weight", "Weight"], ["address", "Address"], ["medicalHistory", "Medical history"]].map(([key, label]) => <Field key={key} label={label!} value={form[key!] || ""} onChangeText={value => { setSaved(false); setForm(f => ({ ...f, [key!]: value })); }} keyboardType={key === "age" ? "number-pad" : key === "phoneNumber" ? "phone-pad" : "default"} multiline={key === "medicalHistory"} autoCapitalize={key === "gender" ? "none" : "sentences"} />)}<ErrorText message={error} />{saved && <Body>Profile saved.</Body>}<Button title="Save changes" busy={busy} onPress={() => void save()} /></>}</Screen>;
 }
 export function Feedback({ back }: { back(): void }) {
   const [rating, setRating] = useState(5); const [text, setText] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [sent, setSent] = useState(false);
