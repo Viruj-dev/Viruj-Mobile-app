@@ -1,3 +1,4 @@
+import { BlurView } from "expo-blur";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, BackHandler, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +13,7 @@ import { DeleteAccount, EditProfile, Feedback, Profile } from "./profile";
 import { useSession } from "./session";
 import { Button, colors, ErrorText, Glyph, ResourceState, Row, Screen, useResource, type Icon } from "./ui";
 import { type CareItem } from "./api";
-const tabs: { name: string; label: string; icon: Icon }[] = [{ name: "home", label: "Home", icon: "grid-outline" }, { name: "health", label: "My health", icon: "heart-outline" }, { name: "chat", label: "Ask AI", icon: "sparkles-outline" }, { name: "community", label: "Community", icon: "people-outline" }, { name: "profile", label: "Profile", icon: "person-outline" }];
+const tabs: { name: string; label: string; icon: Icon }[] = [{ name: "home", label: "Home", icon: "home" }, { name: "health", label: "My Health", icon: "shield-checkmark" }, { name: "chat", label: "Ask AI", icon: "sparkles-outline" }, { name: "community", label: "Community", icon: "people-outline" }, { name: "profile", label: "Profile", icon: "person-circle" }];
 export function PatientApp() {
   const { session, loading, error, restore, logout } = useSession();
   if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
@@ -28,7 +29,7 @@ function Workspace() {
   useEffect(() => { const listener = BackHandler.addEventListener("hardwareBackPress", () => { if (stack.length) { setStack(value => value.slice(0, -1)); return true; } if (tab !== "home") { setTab("home"); return true; } return false; }); return () => listener.remove(); }, [stack.length, tab]);
   const name = route?.name || tab;
   let screen;
-  if (name === "care") screen = <Care key={route!.kind} kind={route!.kind!} navigate={navigate} back={back} />;
+  if (name === "care") screen = <Care key={`${route!.kind}/${route!.query || ""}`} kind={route!.kind!} department={route!.query} navigate={navigate} back={back} />;
   else if (name === "detail") screen = <CareDetail key={`${route!.kind}/${route!.id}`} kind={route!.kind!} id={route!.id!} navigate={navigate} back={back} />;
   else if (name === "hospital-doctors") screen = <HospitalDoctors id={route!.id!} back={back} navigate={navigate} />;
   else if (name === "booking") screen = <Booking doctorId={route!.id!} back={back} complete={() => navigate({ name: "health" })} />;
@@ -41,6 +42,6 @@ function Workspace() {
   else if (name === "community") screen = <Community />;
   else if (name === "profile") screen = <Profile navigate={navigate} />;
   else screen = <Home navigate={navigate} />;
-  return <View style={{ flex: 1, backgroundColor: colors.bg }}>{screen}{!route && <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: "white", paddingTop: 10, paddingBottom: Math.max(insets.bottom, 12) }}>{tabs.map(item => <Pressable key={item.name} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.name }} onPress={() => setTab(item.name)} style={{ flex: 1, minHeight: 50, alignItems: "center", justifyContent: "center", gap: 6 }}><Glyph name={item.icon} color={tab === item.name ? colors.deep : colors.muted} size={22} /><Text style={{ fontSize: 10, fontWeight: tab === item.name ? "700" : "500", color: tab === item.name ? colors.deep : colors.muted }}>{item.label}</Text></Pressable>)}</View>}</View>;
+  return <View style={{ flex: 1, backgroundColor: colors.bg }}>{screen}{!route && <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 16), height: 80, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#FFFFFF80", backgroundColor: "#FFFFFF66", flexDirection: "row", alignItems: "center", paddingHorizontal: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>{tabs.map(item => <Pressable key={item.name} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.name }} onPress={() => setTab(item.name)} style={{ flex: 1, minHeight: 64, alignItems: "center", justifyContent: "center" }}>{item.name === "chat" ? <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "#EF3038", borderWidth: 2, borderColor: "#FFFFFF55", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }}><Text style={{ fontFamily: "Merienda", fontSize: 18, fontWeight: "700", color: "white" }}>AI</Text></View> : <><View style={{ padding: 8, borderRadius: 12, backgroundColor: tab === item.name ? "#00000012" : "transparent" }}><Glyph name={item.icon} color={tab === item.name ? "#171717" : "#4B5563"} size={20} /></View><Text style={{ fontFamily: "Merienda", marginTop: 4, fontSize: 10, color: tab === item.name ? "#171717" : "#4B5563" }}>{item.label}</Text></>}</Pressable>)}</BlurView>}</View>;
 }
 function HospitalDoctors({ id, back, navigate }: { id: string; back(): void; navigate(destination: Destination): void }) { const result = useResource<{ data: CareItem[] }>(`/hospitals/${id}/doctors`); return <Screen title="Hospital doctors" back={back}><ResourceState {...result} />{result.data?.data.map(item => <Row key={item.id} title={item.name} detail={item.specialty} icon="medkit-outline" onPress={() => navigate({ name: "detail", kind: "doctors", id: String(item.id) })} />)}</Screen>; }

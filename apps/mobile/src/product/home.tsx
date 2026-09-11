@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, View, type TextProps, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { type CareItem, webOrigin } from "./api";
@@ -8,6 +8,7 @@ import { Glyph, ResourceState, useResource } from "./ui";
 
 export type Destination = { name: string; id?: string; kind?: string; query?: string };
 export type Navigate = (destination: Destination) => void;
+function Text(props: TextProps) { return <NativeText {...props} style={[{ fontFamily: "Merienda" }, props.style]} />; }
 const concerns = [
   ["Surgery", "bandage", "#FEF2F2", "#FECACA", "#991B1B"],
   ["Cardiac Sciences", "heart-pulse", "#FFF1F2", "#FECDD3", "#9F1239"],
