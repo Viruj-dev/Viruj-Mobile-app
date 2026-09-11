@@ -6,7 +6,7 @@ Source of truth: `../virujhealthapp`, https://app.virujhealth.com. This is a liv
 
 Keep the existing Expo 54 / React Native 0.81 / TypeScript project. Native screens use the patient web backend through `/api/mobile/*` aliases, which reuse existing route handlers and database tables. Better Auth signed bearer sessions are stored in Android SecureStore. Web preview keeps tokens only in memory. No health data is persisted locally. Existing central-backend OTP code is retained but is not mixed with web-account sessions.
 
-Design: web-app red (#B91C1C), deep red (#7F1D1D), warm white, dark ink, generous spacing, restrained typography, concise labels. Five destinations: Home, My health, Ask AI, Community, Profile. Secondary screens use a native back stack.
+Design: faithfully port the patient web app, as requested on 2026-09-11. Home follows `home-header`, `problem-icons`, `hospital-banner-slider`, `service-categories`, `doctor-card`, and `hospital-card`; bottom navigation follows `bottom-nav`. Reuse the original images, department icons, Merienda font (bundled with OFL license), burgundy header stops, spacing, and section order. Home and navigation are implemented; remaining screens still need visual parity. Native interaction and safe-area adjustments must preserve the web layout. Do not invent a replacement design.
 
 ## Workflow inventory
 
@@ -46,3 +46,7 @@ Design: web-app red (#B91C1C), deep red (#7F1D1D), warm white, dark ink, generou
 ## Verification boundaries
 
 No staging account was provided. Use isolated synthetic fixtures for client checks; never write to production to test. Cross-platform persistence, provider credentials, Android device behavior, and release signing need separate verification. Owner approved `com.virujhealth.app` as a new application ID. Production deployments and Play publication are not authorized.
+
+## Visual checkpoint — 2026-09-11
+
+Home and floating navigation inspected in the local synthetic browser preview. Department tiles use the existing `/departments/:slug/doctors` API; More Departments expands, original offers have previous/next controls, and service tiles open their directories. Clinics and Radiology remain disabled as on the web. The icon strip is rasterized at 3x from the exact React Icons used by the web `problem-icons.tsx` component. Header colors are sRGB conversions of the existing OKLCH brand variables. TypeScript, 27 existing tests, and Android JS export passed. This does not establish APK/device readiness or complete visual parity across every screen.

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, View, type TextProps, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { type CareItem, webOrigin } from "./api";
 import { useSession } from "./session";
 import { Glyph, ResourceState, useResource } from "./ui";
@@ -33,7 +32,7 @@ const services = [
   { label: "Radiology", kind: "", image: require("../../assets/web/radiology.png"), bg: "#FCF8FF", border: "#F3E8FF" },
 ];
 const banners = [require("../../assets/web/banner-1.png"), require("../../assets/web/banner-2.png"), require("../../assets/web/banner-3.png"), require("../../assets/web/banner-4.png")];
-const headerGradient = "linear-gradient(135deg, #79212B 0%, #601923 50%, #28171A 100%)";
+const headerGradient = "linear-gradient(135deg, #7C1117 0%, #62090F 50%, #271513 100%)";
 const gradient: ViewStyle = Platform.OS === "web" ? { backgroundImage: headerGradient } as ViewStyle : { experimental_backgroundImage: headerGradient };
 
 export function Home({ navigate }: { navigate: Navigate }) {
@@ -45,7 +44,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
   const hospitals = useResource<{ data: CareItem[] }>("/hospitals?limit=4");
   useEffect(() => { if (!autoplay) return; const timer = setInterval(() => setBanner(i => (i + 1) % banners.length), 4000); return () => clearInterval(timer); }, [autoplay]);
   function changeBanner(step: number) { setAutoplay(false); setBanner(i => (i + step + banners.length) % banners.length); }
-  return <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1, backgroundColor: "#79212B" }}>
+  return <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1, backgroundColor: "#7C1117" }}>
     <ScrollView style={{ backgroundColor: "#F8FAFC" }} contentContainerStyle={{ paddingBottom: 120 }}>
       <View style={[h.header, gradient]}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 24 }}>
@@ -57,7 +56,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
       <View style={h.content}>
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <Text style={h.pill}>Select Your Health Concern</Text>
-          <View style={h.grid}>{concerns.slice(0, expanded ? concerns.length : 8).map(([name, icon, bg, circle, color]) => <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} onPress={() => navigate({ name: "care", kind: "doctors", query: name })} style={[h.concern, { backgroundColor: bg }]}><View style={[h.circle, { backgroundColor: circle }]}><MaterialCommunityIcons name={icon} color={color} size={40} /></View><Text style={h.concernLabel}>{name}</Text></Pressable>)}</View>
+          <View style={h.grid}>{concerns.slice(0, expanded ? concerns.length : 8).map(([name, , bg, circle], index) => <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} onPress={() => navigate({ name: "care", kind: "doctors", query: name })} style={[h.concern, { backgroundColor: bg }]}><View style={[h.circle, { backgroundColor: circle }]}><View style={{ width: 40, height: 40, overflow: "hidden" }}><Image source={require("../../assets/web/concern-icons.png")} style={{ position: "absolute", width: 560, height: 40, left: -40 * index }} /></View></View><Text style={h.concernLabel}>{name}</Text></Pressable>)}</View>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(!expanded)} style={h.more}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Glyph name={expanded ? "remove" : "add"} size={20} color="#374151" /><Text style={{ fontSize: 14, fontWeight: "700", color: "#374151" }}>{expanded ? "Fewer Departments" : "More Departments (6)"}</Text></View><Glyph name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#4B5563" /></Pressable>
         </View>
         <View style={{ gap: 8 }}><Text style={h.pill}>Discounts & Offers</Text><View style={h.banner}><Image source={banners[banner]} accessibilityLabel={`Hospital offer ${banner + 1}`} style={{ width: "100%", aspectRatio: 16 / 7 }} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Previous offer" onPress={() => changeBanner(-1)} style={[h.arrow, { left: 8 }]}><Glyph name="chevron-back" color="#374151" /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Next offer" onPress={() => changeBanner(1)} style={[h.arrow, { right: 8 }]}><Glyph name="chevron-forward" color="#374151" /></Pressable></View></View>
@@ -78,7 +77,7 @@ function FeaturedCard({ item, kind, navigate }: { item: CareItem; kind: string; 
   return <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name}`} onPress={() => navigate({ name: "detail", kind, id: String(item.id) })} style={h.card}><View style={{ width: doctor ? 80 : 112, height: doctor ? 80 : 96, borderRadius: doctor ? 40 : 6, overflow: "hidden", backgroundColor: doctor ? "#DBEAFE" : "#FEE2E2", alignItems: "center", justifyContent: "center" }}>{photo && !failed ? <Image source={{ uri: photo.startsWith("/") ? `${webOrigin}${photo}` : photo }} onError={() => setFailed(true)} style={{ width: "100%", height: "100%" }} /> : <Glyph name={doctor ? "person-outline" : "business-outline"} size={40} color={doctor ? "#60A5FA" : "#F87171"} />}</View><View style={{ flex: 1, gap: 6 }}><Text numberOfLines={1} style={{ fontSize: doctor ? 18 : 16, fontWeight: "700", color: "#111827" }}>{item.name}</Text>{item.specialty && <Text style={{ fontSize: 14, color: "#2563EB" }}>{item.specialty}</Text>}{item.qualifications && <Text style={h.detail}>{item.qualifications}</Text>}{item.hospital_name && <Text style={h.badge}>{item.hospital_name}</Text>}{item.city && <Text style={h.detail}>{item.city}</Text>}{item.consultation_fees != null && <Text style={h.detail}>Fee: ₹{item.consultation_fees}</Text>}{item.availability && <Text style={h.detail}>{item.availability}</Text>}{item.rating != null && <Text style={{ fontSize: 12, color: "#B45309" }}>★ {item.rating}</Text>}</View></Pressable>;
 }
 const h = StyleSheet.create({
-  header: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: "#601923" },
+  header: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: "#62090F" },
   welcome: { fontSize: 30, color: "white", letterSpacing: -0.7 }, name: { fontSize: 18, fontWeight: "500", color: "#FFFFFFE6" }, overview: { fontSize: 14, color: "#FFFFFFB3" },
   bell: { width: 44, height: 44, borderRadius: 16, backgroundColor: "#FFFFFF33", alignItems: "center", justifyContent: "center" },
   search: { minHeight: 44, borderRadius: 30, backgroundColor: "white", flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12 },

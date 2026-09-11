@@ -16,6 +16,7 @@ const server = Bun.serve({ hostname: "127.0.0.1", port: 8093, async fetch(reques
   if (path === "/auth/sign-out") { loggedIn = false; return json({ success: true }); }
   if (path === `/users/${profile.id}`) { if (request.method === "PATCH") Object.assign(profile, await request.json()); return json(profile); }
   if (path === "/doctors") return json({ data: url.searchParams.get("search") === "none" ? [] : [doctor], pagination: { totalPages: 1 } });
+  if (/^\/departments\/[a-z-]+\/doctors$/.test(path)) return json({ data: [doctor] });
   if (path === "/doctors/1") return json({ data: doctor });
   if (path === "/hospitals") return json({ data: [{ id: 1, name: "Test Care Centre", city: "Test City" }] });
   if (path === "/pathlabs") return json({ data: [] });
