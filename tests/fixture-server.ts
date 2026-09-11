@@ -1,15 +1,18 @@
 // Explicit UI test fixture. Never imported by the app or deployed as a backend.
-const profile = { id: "synthetic-patient", name: "Asha", email: "patient@example.test", role: "user", age: 30, bloodGroup: "O+", onboardingCompleted: true };
+const profile = { id: "synthetic-patient", name: "Asha", email: "patient@example.test", phoneNumber: "+919876543210", role: "user", age: 30, bloodGroup: "O+", onboardingCompleted: true };
 const doctor = { id: 1, name: "Dr. Test Mehta", specialty: "General medicine", hospital_name: "Test Care Centre", hospitalName: "Test Care Centre", consultation_fees: 500, consultationFees: 500, qualifications: "Synthetic test profile" };
 const appointments: Record<string, unknown>[] = [];
 const posts = [{ id: "test-post", content: "A synthetic community post for interface testing.", type: "update", author: { id: "test-author", name: "Test Community" }, createdAt: new Date().toISOString(), likeCount: 0, commentCount: 0 }];
 const sessions: Record<string, unknown>[] = [];
 let loggedIn = false;
+let requestedPhone = "";
 const server = Bun.serve({ hostname: process.env.FIXTURE_HOST || "127.0.0.1", port: Number(process.env.FIXTURE_PORT || 8093), async fetch(request) {
   const url = new URL(request.url); const path = url.pathname.replace("/api/mobile", "");
   const headers = { "Access-Control-Allow-Origin": "http://localhost:8094", "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS", "Access-Control-Expose-Headers": "set-auth-token" };
   const json = (data: unknown, status = 200, more = {}) => Response.json(data, { status, headers: { ...headers, ...more } });
   if (request.method === "OPTIONS") return new Response(null, { headers });
+  if (path === "/auth/phone-number/send-otp") { const body = await request.json(); requestedPhone = body.phoneNumber; return json({ message: "code sent", developmentOtp: "123456" }); }
+  if (path === "/auth/phone-number/verify") { const body = await request.json(); if (body.phoneNumber !== requestedPhone || body.code !== "123456") return json({ message: "Invalid OTP" }, 400); loggedIn = true; return json({ status: true, user: profile }, 200, { "set-auth-token": "synthetic.signed" }); }
   if (path === "/auth/sign-in/email") { const body = await request.json(); if (body.email !== profile.email || body.password !== "synthetic-test-only") return json({ error: "Invalid credentials" }, 401); loggedIn = true; return json({ user: profile }, 200, { "set-auth-token": "synthetic.signed" }); }
   if (!loggedIn || request.headers.get("authorization") !== "Bearer synthetic.signed") return json({ error: "Unauthorized" }, 401);
   if (path === "/auth/get-session") return json({ user: profile, session: { expiresAt: new Date(Date.now() + 3600000).toISOString() } });

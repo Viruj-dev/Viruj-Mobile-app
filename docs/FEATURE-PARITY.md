@@ -12,7 +12,7 @@ Design: faithfully port the patient web app, as requested on 2026-09-11. Home fo
 
 | Web workflow / role | Native destination | Dependency | Implementation / verification |
 |---|---|---|---|
-| Email login, signup / all accounts | Sign in / Create account | Better Auth | Pending |
+| Phone OTP login and signup / patients | Welcome → Mobile number → Verify OTP | Better Auth phone-number plugin + Twilio | Implemented; staging SMS delivery and migration pending |
 | Google / Facebook login | Auth | Provider credentials + native redirect registration | Pending integration; do not substitute an unrelated account |
 | Phone OTP | Existing central mobile auth | Separate identity database | Existing implementation retained; web account linking unresolved |
 | Password recovery | Reset password | Existing email endpoint | Pending |

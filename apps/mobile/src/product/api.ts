@@ -53,7 +53,7 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
         if (version !== generation) throw new ApiError("Session changed. Please try again.", 401);
         const renewed = response.headers.get("set-auth-token");
         if (renewed) await storage.set(renewed);
-        if (path === "/auth/sign-in/email" || path === "/auth/sign-up/email") {
+        if (path === "/auth/sign-in/email" || path === "/auth/sign-up/email" || path === "/auth/phone-number/verify") {
           if (!renewed) throw new ApiError("Mobile sign-in is not enabled on this server yet.", 503);
         }
         return data as T;

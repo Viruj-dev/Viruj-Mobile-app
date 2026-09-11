@@ -28,3 +28,12 @@ test("does not automatically retry writes and rejects unsafe origins", async () 
   expect(() => validateOrigin("https://secret@example.com", false)).toThrow();
   expect(validateOrigin("http://localhost:3000", true)).toBe("http://localhost:3000");
 });
+test("stores a signed bearer session after OTP verification", async () => {
+  const store = storage(null);
+  const client = createWebApi("https://example.test", store, (async (url) => {
+    expect(url).toBe("https://example.test/api/mobile/auth/phone-number/verify");
+    return Response.json({ status: true }, { headers: { "set-auth-token": "otp.signed" } });
+  }));
+  await client.request("/auth/phone-number/verify", { method: "POST", public: true, body: { phoneNumber: "+919876543210", code: "123456" } });
+  expect(await store.get()).toBe("otp.signed");
+});
