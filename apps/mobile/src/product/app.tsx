@@ -15,7 +15,7 @@ import { type CareItem } from "./api";
 const tabs: { name: string; label: string; icon: Icon }[] = [{ name: "home", label: "Home", icon: "grid-outline" }, { name: "health", label: "My health", icon: "heart-outline" }, { name: "chat", label: "Ask AI", icon: "sparkles-outline" }, { name: "community", label: "Community", icon: "people-outline" }, { name: "profile", label: "Profile", icon: "person-outline" }];
 export function PatientApp() {
   const { session, loading, error, restore, logout } = useSession();
-  if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.teal} /></Screen>;
+  if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
   if (!session && error) return <Screen title="Connection unavailable"><ErrorText message={error} /><Button title="Try again" onPress={() => void restore()} /><Button title="Sign in with another account" secondary onPress={() => void logout().catch(() => {})} /></Screen>;
   if (!session) return <AuthScreen />;
   return <Workspace key={session.user.id} />;

@@ -6,7 +6,7 @@ Source of truth: `../virujhealthapp`, https://app.virujhealth.com. This is a liv
 
 Keep the existing Expo 54 / React Native 0.81 / TypeScript project. Native screens use the patient web backend through `/api/mobile/*` aliases, which reuse existing route handlers and database tables. Better Auth signed bearer sessions are stored in Android SecureStore. Web preview keeps tokens only in memory. No health data is persisted locally. Existing central-backend OTP code is retained but is not mixed with web-account sessions.
 
-Design: existing teal (#0E9996), warm white, dark ink, generous spacing, restrained typography, concise labels. Five destinations: Home, My health, Ask AI, Community, Profile. Secondary screens use a native back stack.
+Design: web-app red (#B91C1C), deep red (#7F1D1D), warm white, dark ink, generous spacing, restrained typography, concise labels. Five destinations: Home, My health, Ask AI, Community, Profile. Secondary screens use a native back stack.
 
 ## Workflow inventory
 

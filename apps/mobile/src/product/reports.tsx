@@ -10,7 +10,7 @@ export function Reports({ back }: { back(): void }) {
   const reports = useResource<{ data: Report[] }>("/reports"); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   async function share(report: Report) {
     if (busy) return; setBusy(true); setError("");
-    const html = `<html><head><meta charset="utf-8"/><style>body{font-family:sans-serif;padding:40px;color:#152f32}h1{color:#096c69}p{line-height:1.6}</style></head><body><h1>Viruj Health</h1><p>AI-generated information — not a diagnosis or clinician prescription.</p><h2>${escape(report.disease)}</h2><p>${escape(report.summary)}</p><p>${escape(new Date(report.createdAt).toLocaleDateString())}</p></body></html>`;
+    const html = `<html><head><meta charset="utf-8"/><style>body{font-family:sans-serif;padding:40px;color:#2b1c1c}h1{color:#7f1d1d}p{line-height:1.6}</style></head><body><h1>Viruj Health</h1><p>AI-generated information — not a diagnosis or clinician prescription.</p><h2>${escape(report.disease)}</h2><p>${escape(report.summary)}</p><p>${escape(new Date(report.createdAt).toLocaleDateString())}</p></body></html>`;
     try {
       if (Platform.OS === "web") { await Print.printAsync({ html }); return; }
       if (!(await Sharing.isAvailableAsync())) throw new Error("Sharing is unavailable on this device.");
