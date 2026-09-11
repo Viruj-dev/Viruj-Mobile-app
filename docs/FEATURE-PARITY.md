@@ -50,3 +50,9 @@ No staging account was provided. Use isolated synthetic fixtures for client chec
 ## Visual checkpoint — 2026-09-11
 
 Home and floating navigation inspected in the local synthetic browser preview. Department tiles use the existing `/departments/:slug/doctors` API; More Departments expands, original offers have previous/next controls, and service tiles open their directories. Clinics and Radiology remain disabled as on the web. The icon strip is rasterized at 3x from the exact React Icons used by the web `problem-icons.tsx` component. Header colors are sRGB conversions of the existing OKLCH brand variables. TypeScript, 27 existing tests, and Android JS export passed. This does not establish APK/device readiness or complete visual parity across every screen.
+
+## Auth visual parity — 2026-09-11
+
+The native auth entry now follows the web welcome → three-slide onboarding → login flow, followed by signup and password recovery. Original onboarding images were already bundled; the three white curve masks reproduce the web SVG clip paths. Forms match the web centered headings, Merienda type, field backgrounds, red buttons, social row, and footer links. Native touch targets and keyboard scrolling remain accessible. Browser checks covered login, signup, confirmation mismatch, and password-reset layout; unit checks cover consent, confirmation, and email validation.
+
+Remember me is forwarded to Better Auth. Signup uses the existing eight-character backend password minimum rather than the web UI’s weaker six-character validation. Google/Facebook buttons explicitly report that native OAuth is not connected; no pretend login or browser-only session handoff. Privacy opens the existing public web page. PWA install prompts are omitted inside the native app. Reset email delivery and real signup require the shared backend; the local fixture does not send mail or create production accounts.

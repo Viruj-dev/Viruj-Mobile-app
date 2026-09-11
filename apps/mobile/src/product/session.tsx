@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { AppState } from "react-native";
 import { api, ApiError, type Session } from "./api";
 
-type AuthState = { session: Session | null; loading: boolean; error: string; restore(): Promise<void>; signIn(email: string, password: string, name?: string): Promise<void>; logout(): Promise<void> };
+type AuthState = { session: Session | null; loading: boolean; error: string; restore(): Promise<void>; signIn(email: string, password: string, name?: string, rememberMe?: boolean): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -25,8 +25,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const listener = AppState.addEventListener("change", (state) => { if (state === "active") void restore(); });
     return () => { listener.remove(); api.setUnauthorized(() => {}); };
   }, [restore]);
-  async function signIn(email: string, password: string, name?: string) {
-    await api.request(name ? "/auth/sign-up/email" : "/auth/sign-in/email", { method: "POST", public: true, body: { email: email.trim().toLowerCase(), password, ...(name ? { name: name.trim() } : {}) } });
+  async function signIn(email: string, password: string, name?: string, rememberMe = false) {
+    await api.request(name ? "/auth/sign-up/email" : "/auth/sign-in/email", { method: "POST", public: true, body: { email: email.trim().toLowerCase(), password, rememberMe, ...(name ? { name: name.trim() } : {}) } });
     const value = await api.request<Session | null>("/auth/get-session");
     if (!value?.user) throw new Error("Could not load your account. Please try again.");
     setSession(value);
