@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Linking, Platform, View } from "react-native";
+import { Image, Linking, Platform, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import { File } from "expo-file-system";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { api } from "./api";
 import { Body, Button, ErrorText } from "./ui";
 
@@ -39,3 +40,8 @@ export function VoiceInput({ onText, disabled }: { onText(value: string): void; 
   }
   return <View style={{ gap: 10 }}><Body>Voice is sent to Viruj’s transcription provider when you stop recording.</Body><Button title={state.isRecording ? "Stop & transcribe" : "Use voice"} icon={state.isRecording ? "stop" : "mic-outline"} secondary busy={busy} disabled={disabled} onPress={() => void toggle()} /><ErrorText message={error} />{denied && <Button title="Open settings" secondary onPress={() => void Linking.openSettings()} />}</View>;
 }
+
+export type SelectedMedia = { uri: string; type: "image" | "video" };
+export async function pickMedia(camera = false, maxMB = 10): Promise<SelectedMedia | null> { if (camera) { const permission = await ImagePicker.requestCameraPermissionsAsync(); if (!permission.granted) throw new Error("Camera access is required to take a photo."); } const options: ImagePicker.ImagePickerOptions = { mediaTypes: ["images", "videos"], quality: 0.7 }; const result = camera ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options); if (result.canceled) return null; const asset = result.assets[0]; if (!asset || (asset.fileSize || 0) > maxMB * 1024 * 1024) throw new Error(`Choose media under ${maxMB} MB.`); return { uri: asset.uri, type: asset.type === "video" ? "video" : "image" }; }
+export function MediaPreview({ media }: { media: SelectedMedia }) { return media.type === "video" ? <VideoPreview uri={media.uri} /> : <Image source={{ uri: media.uri }} style={{ width: "100%", height: 300, borderRadius: 12 }} resizeMode="contain" />; }
+function VideoPreview({ uri }: { uri: string }) { const player = useVideoPlayer(uri); return <VideoView player={player} nativeControls style={{ width: "100%", height: 300, borderRadius: 12 }} contentFit="contain" />; }

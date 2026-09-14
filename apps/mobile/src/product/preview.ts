@@ -19,10 +19,11 @@ let appointments: Appointment[] = [];
 let posts: Post[] = [];
 let notifications: InboxItem[] = [];
 let sessions: ChatSession[] = [];
+let stories: unknown[] = [];
 let comments: Record<string, { id: string; content: string; author: { name: string }; replies: unknown[] }[]> = {};
 const liked = new Set<string>(); const bookmarked = new Set<string>();
 export function startPreview() {
-  previewEnabled = true; for (const key of Object.keys(previewUser)) delete (previewUser as Record<string, unknown>)[key]; Object.assign(previewUser, initialProfile); liked.clear(); bookmarked.clear(); comments = {}; sessions = [];
+  previewEnabled = true; for (const key of Object.keys(previewUser)) delete (previewUser as Record<string, unknown>)[key]; Object.assign(previewUser, initialProfile); liked.clear(); bookmarked.clear(); comments = {}; sessions = []; stories = [];
   appointments = [{ id: "preview-appointment", doctorId: 1, doctorName: doctors[0]!.name, hospitalName: hospitals[0]!.name, appointmentDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10), appointmentTime: "10:30 AM", appointmentMode: "in-person", status: "pending_approval", reason: "Routine consultation" }, { id: "preview-past", doctorId: 2, doctorName: doctors[1]!.name, hospitalName: hospitals[0]!.name, appointmentDate: "2026-08-20", appointmentTime: "04:00 PM", appointmentMode: "in-person", status: "completed", reason: "Follow-up consultation" }];
   posts = [{ id: "welcome", content: "Welcome to the Viruj community. Share your experiences, connect with others, and discover health awareness updates.", type: "update", author: { id: "demo-author", name: "Viruj Community" }, createdAt: today, likeCount: 12, commentCount: 0 }, { id: "my-post", content: "Taking a little time for myself today. What helps you stay consistent with your routine?", type: "update", author: { id: previewUser.id, name: previewUser.name }, createdAt: today, likeCount: 3, commentCount: 0 }];
   notifications = [{ id: "booking", title: "Appointment request received", content: "Your sample consultation is awaiting approval. View the request in My Health.", createdAt: today, isRead: false, link: "/my-health" }, { id: "welcome", title: "Welcome to Viruj", content: "Complete your health profile to keep your details in one place.", createdAt: today, isRead: false, link: "/profile/edit" }];
@@ -31,6 +32,7 @@ export function stopPreview() { previewEnabled = false; }
 export async function previewRequest(path: string, options: { method?: string; body?: unknown } = {}): Promise<unknown> {
   const url = new URL(path, "https://preview.invalid"); const p = url.pathname; const method = options.method || "GET";
   const body = (options.body || {}) as Record<string, any>;
+  if (p === "/stories") { if (method === "POST") stories.unshift({ ...body, id: String(Date.now()), createdAt: new Date().toISOString(), author: { name: previewUser.name, image: previewUser.image }, viewCount: 0 }); return { data: [...stories] }; }
   if (p === "/auth/get-session") return previewSession;
   if (p === "/auth/sign-out") return {};
   if (p.startsWith("/users/")) { if (method === "PATCH") Object.assign(previewUser, body); return { ...previewUser }; }
@@ -46,7 +48,7 @@ export async function previewRequest(path: string, options: { method?: string; b
   if (p === "/notifications") { if (method === "DELETE") notifications = notifications.filter(n => n.id !== body.id); if (method === "PATCH") notifications = notifications.map(n => body.all || n.id === body.id ? { ...n, isRead: true } : n); return { data: [...notifications] }; }
   if (p === "/reports") return { data: [{ id: "sample-report", disease: "Sample conversation summary", summary: "This is a preview of an AI-generated report. No medical assessment has been performed.", symptoms: "Not assessed in preview", precautions: "Discuss health concerns with your clinician.", createdAt: today }] };
   if (p === "/community/feed") return { data: [...posts] };
-  if (p === "/community/posts" && method === "POST") { posts.unshift({ id: String(Date.now()), content: body.content, type: body.type, imageUrl: body.imageUrl, author: { id: previewUser.id, name: previewUser.name, image: previewUser.image || undefined }, createdAt: new Date().toISOString(), likeCount: 0, commentCount: 0 }); return {}; }
+  if (p === "/community/posts" && method === "POST") { posts.unshift({ id: String(Date.now()), content: body.content, type: body.type, imageUrl: body.imageUrl, mediaUrls: body.mediaUrls, mediaTypes: body.mediaTypes, tags: body.tags, documentUrls: body.documentUrls, author: { id: previewUser.id, name: previewUser.name, image: previewUser.image || undefined }, createdAt: new Date().toISOString(), likeCount: 0, commentCount: 0 }); return {}; }
   const match = p.match(/^\/community\/posts\/([^/]+)(.*)$/);
   if (match) {
     const id = match[1]!; const action = match[2]; const post = posts.find(p => p.id === id);

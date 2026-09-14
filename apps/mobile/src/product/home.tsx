@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, View, type TextProps, type ViewStyle } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, View, type TextProps, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type CareItem, webOrigin } from "./api";
+import { SearchResults } from "./care";
 import { useSession } from "./session";
 import { Glyph, ResourceState, useResource } from "./ui";
 
@@ -37,6 +38,7 @@ const gradient: ViewStyle = Platform.OS === "web" ? { backgroundImage: headerGra
 
 export function Home({ navigate }: { navigate: Navigate }) {
   const { session } = useSession();
+  const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [banner, setBanner] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
@@ -51,7 +53,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
           <View style={{ gap: 4, flex: 1 }}><Text style={h.welcome}>Welcome Back</Text><Text style={h.name}>{session?.user.name || "User"}</Text><Text style={h.overview}>Here's your health overview</Text></View>
           <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => navigate({ name: "notifications" })} style={h.bell}><Glyph name="notifications-outline" color="white" size={20} /></Pressable>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Search doctors, hospitals, departments" onPress={() => navigate({ name: "search" })} style={h.search}><Glyph name="search-outline" color="#9CA3AF" size={20} /><Text numberOfLines={1} style={{ flex: 1, color: "#9CA3AF", fontSize: 13 }}>Search doctors, hospitals, departments...</Text></Pressable>
+        <View style={h.search}><Glyph name="search-outline" color="#9CA3AF" size={20} /><TextInput accessibilityLabel="Search doctors, hospitals, departments" placeholder="Search doctors, hospitals, departments..." value={search} onChangeText={setSearch} style={{ flex: 1, minWidth: 0, minHeight: 44, fontFamily: "Merienda", fontSize: 13 }} /></View>{search.trim().length >= 2 && <View style={{ backgroundColor: "white", borderRadius: 16, padding: 12 }}><SearchResults query={search.trim()} navigate={d => { setSearch(""); navigate(d); }} /></View>}
       </View>
       <View style={h.content}>
         <View style={{ gap: 16, paddingVertical: 8 }}>
@@ -60,7 +62,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
           <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(!expanded)} style={h.more}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Glyph name={expanded ? "remove" : "add"} size={20} color="#374151" /><Text style={{ fontSize: 14, fontWeight: "700", color: "#374151" }}>{expanded ? "Fewer Departments" : "More Departments (6)"}</Text></View><Glyph name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#4B5563" /></Pressable>
         </View>
         <View style={{ gap: 8 }}><Text style={h.pill}>Discounts & Offers</Text><View style={h.banner}><Image source={banners[banner]} accessibilityLabel={`Hospital offer ${banner + 1}`} style={{ width: "100%", aspectRatio: 16 / 7 }} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Previous offer" onPress={() => changeBanner(-1)} style={[h.arrow, { left: 8 }]}><Glyph name="chevron-back" color="#374151" /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Next offer" onPress={() => changeBanner(1)} style={[h.arrow, { right: 8 }]}><Glyph name="chevron-forward" color="#374151" /></Pressable></View></View>
-        <View style={{ gap: 24 }}><Text style={h.pill}>HEALTHCARE SERVICES</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 8, paddingBottom: 24 }}>{services.map(service => <Pressable key={service.label} accessibilityRole="button" onPress={() => navigate(service.kind ? { name: "care", kind: service.kind } : { name: "service-info", query: service.label })} style={{ alignItems: "center", gap: 16 }}><View style={[h.service, { backgroundColor: service.bg, borderColor: service.border }]}><Image source={service.image} style={{ width: "100%", height: "100%", opacity: service.kind ? 1 : 0.5 }} resizeMode="contain" /></View>{!service.kind && <Text style={h.soon}>SOON</Text>}<Text style={{ fontSize: 14, color: service.kind ? "#1F2937" : "#9CA3AF" }}>{service.label}</Text></Pressable>)}</ScrollView></View>
+        <View style={{ gap: 24 }}><Text style={h.pill}>HEALTHCARE SERVICES</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 8, paddingBottom: 24 }}>{services.map(service => <Pressable key={service.label} accessibilityRole="button" disabled={!service.kind} onPress={() => navigate({ name: "care", kind: service.kind })} style={{ alignItems: "center", gap: 16 }}><View style={[h.service, { backgroundColor: service.bg, borderColor: service.border }]}><Image source={service.image} style={{ width: "100%", height: "100%", opacity: service.kind ? 1 : 0.5 }} resizeMode="contain" /></View>{!service.kind && <Text style={h.soon}>SOON</Text>}<Text style={{ fontSize: 14, color: service.kind ? "#1F2937" : "#9CA3AF" }}>{service.label}</Text></Pressable>)}</ScrollView></View>
         <View style={{ gap: 16 }}><SectionTitle title="Top Doctors" detail="Consult with our best specialists" onPress={() => navigate({ name: "care", kind: "doctors" })} /><ResourceState {...doctors} />{doctors.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="doctors" navigate={navigate} />)}</View>
         <View style={{ gap: 16 }}><SectionTitle title="Nearby Hospitals" detail="Quality healthcare facilities near you" onPress={() => navigate({ name: "care", kind: "hospitals" })} /><ResourceState {...hospitals} />{hospitals.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="hospitals" navigate={navigate} />)}</View>
       </View>
