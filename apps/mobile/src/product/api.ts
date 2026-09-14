@@ -1,8 +1,9 @@
 import { previewEnabled, previewRequest, stopPreview } from "./preview";
 export type Session = { user: { id: string; name: string; email: string; image?: string | null; role?: string; onboardingCompleted?: boolean }; session: { expiresAt: string } };
 export type Profile = Session["user"] & { phoneNumber?: string | null; age?: number | null; gender?: string | null; bloodGroup?: string | null; height?: string | null; weight?: string | null; address?: string | null; recentAppointments?: string | null; medicalHistory?: string | null };
-export type CareItem = { id: string | number; name: string; specialty?: string; qualifications?: string; experience?: string; imageUrl?: string; image_url?: string; consultationFees?: number; consultation_fees?: number; state?: string; pincode?: string; departments?: string; departmentName?: string; totalReviews?: number; reviewCount?: number; isOpen?: boolean; emergencyServices?: boolean; ambulanceService?: boolean; parkingAvailable?: boolean; facilities?: string | string[]; hospital_id?: string | number; email?: string; hospitalName?: string; hospital_name?: string; city?: string; address?: string; description?: string; phone?: string; website?: string; rating?: string | number; availability?: string; startingPrice?: number; area?: string };
-export type Appointment = { id: string; doctorId?: number; doctorName: string; doctorSpecialty?: string; departmentName?: string; hospitalAddress?: string; hospitalName: string; appointmentDate: string; appointmentTime: string; appointmentMode: string; status: string; reason?: string };
+export type Practice = { id: string; tenantId: string; clinicId: string; locationId?: string; hospitalId?: number; name: string; address?: string; bookingEnabled: boolean; modes: string[] };
+export type CareItem = { practices?: Practice[]; bookingAvailable?: boolean; services?: { id: string; name: string; description?: string }[]; photos?: { url: string; caption?: string }[]; id: string | number; name: string; specialty?: string; qualifications?: string; experience?: string; imageUrl?: string; image_url?: string; consultationFees?: number; consultation_fees?: number; state?: string; pincode?: string; departments?: string; departmentName?: string; totalReviews?: number; reviewCount?: number; isOpen?: boolean; emergencyServices?: boolean; ambulanceService?: boolean; parkingAvailable?: boolean; facilities?: string | string[]; hospital_id?: string | number; email?: string; hospitalName?: string; hospital_name?: string; city?: string; address?: string; description?: string; phone?: string; website?: string; rating?: string | number; availability?: string; startingPrice?: number; area?: string };
+export type Appointment = { source?: "erp" | "legacy"; version?: number; rejectionReason?: string; cancellationReason?: string; id: string; doctorId?: number; doctorName: string; doctorSpecialty?: string; departmentName?: string; hospitalAddress?: string; hospitalName: string; appointmentDate: string; appointmentTime: string; appointmentMode: string; status: string; reason?: string };
 export type Post = { id: string; content: string; type: string; imageUrl?: string; mediaUrls?: string[]; mediaTypes?: ("image" | "video")[]; tags?: string[]; documentUrls?: string[]; createdAt: string; isLiked?: boolean; isBookmarked?: boolean; likeCount?: number; commentCount?: number; author: { id: string; name: string; role?: string; image?: string } | null };
 export type InboxItem = { id: string; title: string; content: string; isRead: boolean; link?: string; createdAt: string };
 export type Message = { sender: "user" | "ai"; text: string; image?: string };
@@ -23,7 +24,7 @@ const store: Store = {
   async set(value) { if (typeof document !== "undefined") memoryToken = value; else await (await import("expo-secure-store")).setItemAsync(tokenKey, value); },
   async clear() { memoryToken = null; if (typeof document === "undefined") await (await import("expo-secure-store")).deleteItemAsync(tokenKey); },
 };
-export function createWebApi(origin: string, storage: Store, fetcher: (input: string, init?: RequestInit) => Promise<Response> = fetch) {
+export function createWebApi(origin: string, storage: Store, fetcher: (input: string, init?: RequestInit) => Promise<Response> = fetch, patientOrigin?: string) {
   let unauthorized = () => {};
   let generation = 0;
   return {
@@ -44,7 +45,8 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
       if (options.signal?.aborted) controller.abort();
       const timer = setTimeout(abort, path.includes("/ai/") ? 90_000 : 20_000);
       try {
-        const response = await fetcher(`${origin}/api/mobile${path}`, { method: options.method || "GET", headers, credentials: "omit", signal: controller.signal, body: options.body ? multipart ? options.body as FormData : JSON.stringify(options.body) : undefined });
+        const care = patientOrigin && /^\/(doctors|hospitals|departments|appointments|search)(\/|\?|$)/.test(path);
+        const response = await fetcher(`${care ? patientOrigin + "/api/patient" : origin + "/api/mobile"}${path}`, { method: options.method || "GET", headers, credentials: "omit", signal: controller.signal, body: options.body ? multipart ? options.body as FormData : JSON.stringify(options.body) : undefined });
         const data = options.binary && response.ok ? await response.arrayBuffer() : await response.json().catch(() => null);
         if (!response.ok) {
           if (response.status === 401 && token && version === generation) { generation++; await storage.clear(); unauthorized(); }
@@ -66,6 +68,7 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
     },
   };
 }
-const liveApi = createWebApi(validateOrigin(webOrigin, typeof __DEV__ !== "undefined" && __DEV__), store);
+const liveApi = createWebApi(validateOrigin(webOrigin, typeof __DEV__ !== "undefined" && __DEV__), store, fetch, process.env.EXPO_PUBLIC_PATIENT_API_URL ? validateOrigin(process.env.EXPO_PUBLIC_PATIENT_API_URL, typeof __DEV__ !== "undefined" && __DEV__) : undefined);
 
 export const api = { ...liveApi, async hasSession() { return previewEnabled || liveApi.hasSession(); }, async clear() { if (previewEnabled) stopPreview(); else await liveApi.clear(); }, async request<T>(path: string, options: Parameters<typeof liveApi.request>[1] = {}): Promise<T> { return previewEnabled ? await previewRequest(path, options) as T : liveApi.request<T>(path, options); } };
+
