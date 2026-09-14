@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle, type TextStyle, type StyleProp } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,8 +19,8 @@ export function Heading({ children, style }: { children: ReactNode; style?: Styl
 export function Body({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) { return <Text style={[s.body, style]}>{children}</Text>; }
 export function ErrorText({ message }: { message?: string }) { return message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={s.error}>{message}</Text> : null; }
 export function Empty({ icon = "leaf-outline", title, detail }: { icon?: Icon; title: string; detail?: string }) { return <View style={s.empty}><Glyph name={icon} size={34} /><Heading>{title}</Heading>{detail && <Body>{detail}</Body>}</View>; }
-export function Screen({ title, subtitle, back, children, right, scroll = true }: { title: string; subtitle?: string; back?: () => void; children: ReactNode; right?: ReactNode; scroll?: boolean }) {
-  return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}><View style={[s.header, Platform.OS === "web" ? { backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" } as ViewStyle : { experimental_backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" }]}>{back && <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={back} style={s.iconButton}><Glyph name="arrow-back" color={colors.ink} /></Pressable>}<View style={{ flex: 1 }}><Text accessibilityRole="header" style={s.title}>{title}</Text></View>{right}</View><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>{scroll ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>{children}</ScrollView> : children}</KeyboardAvoidingView></SafeAreaView>;
+export function Screen({ title, subtitle, back, children, right, floating, scroll = true }: { title: string; subtitle?: string; back?: () => void; children: ReactNode; right?: ReactNode; floating?: ReactNode; scroll?: boolean }) {
+  return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}><View style={[s.header, Platform.OS === "web" ? { backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" } as ViewStyle : { experimental_backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" }]}>{back && <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={back} style={s.iconButton}><Glyph name="arrow-back" color={colors.ink} /></Pressable>}<View style={{ flex: 1 }}><Text accessibilityRole="header" style={s.title}>{title}</Text></View>{right}</View><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>{scroll ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>{children}</ScrollView> : children}</KeyboardAvoidingView>{floating}</SafeAreaView>;
 }
 export function Row({ title, detail, icon, onPress }: { title: string; detail?: string; icon: Icon; onPress(): void }) { return <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={s.row}><View style={s.iconTile}><Glyph name={icon} /></View><View style={{ flex: 1, gap: 4 }}><Text style={s.rowTitle}>{title}</Text>{detail && <Text style={s.body}>{detail}</Text>}</View><Glyph name="chevron-forward" size={18} color={colors.muted} /></Pressable>; }
 export function useResource<T>(path: string) {
@@ -28,9 +28,10 @@ export function useResource<T>(path: string) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
+  const previousPath = useRef(path);
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError(""); setData(null);
+    setLoading(true); setError(""); if (previousPath.current !== path) setData(null); previousPath.current = path;
     api.request<T>(path, { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setData(value); }).catch(e => { if (!controller.signal.aborted) setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [path, version]);

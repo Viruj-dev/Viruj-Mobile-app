@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Image, Modal, Pressable, ScrollView, View } from "react-native";
 import { api } from "./api";
 import { useSession } from "./session";
-import { Avatar, Sheet } from "./community";
+import { Avatar, Sheet } from "./web-controls";
 import { Body, Button, ErrorText, Field, Glyph, ResourceState, useResource } from "./ui";
 import { IconAction } from "./web-controls";
 import { pickMedia, MediaPreview, type SelectedMedia } from "./media";

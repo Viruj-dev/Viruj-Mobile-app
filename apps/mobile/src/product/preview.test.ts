@@ -35,3 +35,24 @@ test("booking accepts real calendar dates and rejects impossible or past dates",
   expect(validBookingDate("2099-01-01")).toBe(true);
   for (const date of ["2099-02-29", "2099-04-31", "2099-13-01", "2000-01-01", "tomorrow"]) expect(validBookingDate(date)).toBe(false);
 });
+
+import { Glob } from "bun";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { webPages } from "./web-pages";
+const webApp = resolve(import.meta.dir, "../../../../../virujhealthapp/src/app");
+(existsSync(webApp) ? test : test.skip)("every source web page has a mobile review destination", () => {
+  const source = [...new Glob("**/page.tsx").scanSync({ cwd: webApp })].map(path => "/" + path.replaceAll("\\", "/").replace(/(^|\/)page\.tsx$/, ""));
+  expect(webPages.map(page => page.path).sort()).toEqual(source.sort());
+});
+test("story media and AI report UI states stay in the local preview", async () => {
+  startPreview();
+  try {
+    await api.request("/stories", { method: "POST", body: { mediaUrl: "local-preview-image", mediaType: "image", caption: "Sample story" } });
+    expect((await api.request<{ data: { caption: string }[] }>("/stories")).data[0]!.caption).toBe("Sample story");
+    const response = await api.request<{ report: { disease: string } }>("/ai/chat", { method: "POST", body: { message: "Sample report" } });
+    expect(response.report.disease).toBe("Sample");
+    startPreview();
+    expect((await api.request<{ data: unknown[] }>("/stories")).data).toHaveLength(0);
+  } finally { stopPreview(); }
+});

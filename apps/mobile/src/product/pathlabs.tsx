@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Image, Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { type CareItem } from "./api";
 import { type Navigate } from "./home";
-import { SearchInput, Stars } from "./care";
+import { SearchInput, Stars } from "./web-controls";
 import { labTests } from "./lab-data";
 import { Body, Button, Card, Empty, ErrorText, Glyph, Heading, ResourceState, Screen, useResource } from "./ui";
 export function Pathlabs({ navigate, back }: { navigate: Navigate; back(): void }) {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatIndianMobile, maskPhoneNumber, normalizeIndianPhoneNumber, toIndianMobileDigits } from "../features/auth/utils/phone-number";
+import { WebAuth, ResetPassword, AuthError } from "./setup";
+import { Privacy } from "./legal";
 import { AuthIntro } from "./auth-intro";
 import { useSession } from "./session";
 import { Glyph, useBack } from "./ui";
@@ -18,6 +20,7 @@ function message(error: unknown) {
 
 export function AuthScreen() {
   const { requestOtp, verifyOtp } = useSession();
+  const [flow, setFlow] = useState("web-auth");
   const [intro, setIntro] = useState(true);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
@@ -55,6 +58,10 @@ export function AuthScreen() {
     finally { setBusy(false); }
   }
   if (intro) return <AuthIntro complete={() => setIntro(false)} />;
+  if (flow === "privacy") return <Privacy back={() => setFlow("web-auth")} navigate={d => setFlow(d.name)} />;
+  if (flow === "reset-password") return <ResetPassword back={() => setFlow("web-auth")} />;
+  if (flow === "auth-error") return <AuthError navigate={d => setFlow(d.name)} />;
+  if (flow !== "phone") return <WebAuth back={() => setIntro(true)} phone={() => setFlow("phone")} navigate={d => setFlow(d.name)} />;
   return <SafeAreaView style={styles.screen}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}><View style={styles.form}>
     {step === "otp" && <Pressable accessibilityRole="button" accessibilityLabel="Edit phone number" onPress={editPhone} style={styles.back}><Glyph name="arrow-back" color="#7F1D1D" /></Pressable>}
     <View style={styles.header}><View style={styles.icon}><Glyph name={step === "phone" ? "phone-portrait-outline" : "shield-checkmark-outline"} color="#7F1D1D" size={32} /></View><Text accessibilityRole="header" style={styles.title}>{step === "phone" ? "Welcome Back" : "Verify OTP"}</Text><Text style={styles.subtitle}>{step === "phone" ? "Sign in with your mobile number" : `Enter the 6-digit code sent to ${maskPhoneNumber(normalized)}.`}</Text></View>

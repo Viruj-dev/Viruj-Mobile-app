@@ -38,3 +38,8 @@ bunx expo run:android
 For EAS, authenticate with the owner's Expo account and associate the project, then run `eas build --platform android --profile preview` for an APK or `eas build --platform android --profile production` for a signed AAB. Review the application ID first. Keep signing files outside Git. EAS uploads source and may incur build charges; no cloud build or publication has been performed by these instructions.
 
 See `docs/FEATURE-PARITY.md` for workflow scope and unverified integrations. Implemented source, passing checks, built AAB, and Play submission readiness are separate milestones.
+
+
+### Review every web app page
+
+On the development launch screen, choose **Review all web app pages** for the 25-route UI review menu, or **Explore UI preview** for the normal navigation. Both use local sample data and need no OTP. The mobile pages follow the corresponding `virujhealthapp/src/app` source; backend-dependent operations remain a separate phase. See `docs/FEATURE-PARITY.md` for the exact integration and verification boundaries.
