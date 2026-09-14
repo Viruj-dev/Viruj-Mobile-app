@@ -37,3 +37,13 @@ test("stores a signed bearer session after OTP verification", async () => {
   await client.request("/auth/phone-number/verify", { method: "POST", public: true, body: { phoneNumber: "+919876543210", code: "123456" } });
   expect(await store.get()).toBe("otp.signed");
 });
+
+test("routes care to the shared backend while retaining web authentication", async () => {
+  const calls: string[] = [];
+  const client = createWebApi("https://web.test", storage("patient.signed"), async (url, init) => {
+    calls.push(url); expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer patient.signed");
+    return Response.json({});
+  }, "https://backend.test");
+  await client.request("/doctors/1"); await client.request("/appointments"); await client.request("/users/a");
+  expect(calls).toEqual(["https://backend.test/api/patient/doctors/1", "https://backend.test/api/patient/appointments", "https://web.test/api/mobile/users/a"]);
+});
