@@ -1,8 +1,9 @@
+import { startPreview, previewSession } from "./preview";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 import { api, ApiError, type Session } from "./api";
 
-type AuthState = { session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<string | undefined>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
+type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<string | undefined>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,6 +28,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [restore]);
   async function requestOtp(phoneNumber: string) {
     const result = await api.request<{ developmentOtp?: string }>("/auth/phone-number/send-otp", { method: "POST", public: true, body: { phoneNumber } });
+    // Local fixture returns its test code; release builds always require manual verification.
+    if (__DEV__ && result.developmentOtp) await verifyOtp(phoneNumber, result.developmentOtp);
     return result.developmentOtp;
   }
   async function verifyOtp(phoneNumber: string, code: string) {
@@ -39,6 +42,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try { await api.request("/auth/sign-out", { method: "POST", body: {} }); }
     finally { await api.clear(); setSession(null); setError(""); }
   }
-  return <Context.Provider value={{ session, loading, error, restore, requestOtp, verifyOtp, logout }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, requestOtp, verifyOtp, logout }}>{children}</Context.Provider>;
 }
 export function useSession() { const context = useContext(Context); if (!context) throw new Error("SessionProvider missing"); return context; }

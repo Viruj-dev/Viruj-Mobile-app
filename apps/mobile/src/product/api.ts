@@ -1,7 +1,8 @@
+import { previewEnabled, previewRequest, stopPreview } from "./preview";
 export type Session = { user: { id: string; name: string; email: string; image?: string | null; role?: string; onboardingCompleted?: boolean }; session: { expiresAt: string } };
 export type Profile = Session["user"] & { phoneNumber?: string | null; age?: number | null; gender?: string | null; bloodGroup?: string | null; height?: string | null; weight?: string | null; address?: string | null; medicalHistory?: string | null };
-export type CareItem = { id: string | number; name: string; specialty?: string; qualifications?: string; experience?: string; imageUrl?: string; image_url?: string; consultationFees?: number; consultation_fees?: number; hospitalName?: string; hospital_name?: string; city?: string; address?: string; description?: string; phone?: string; website?: string; rating?: string | number; availability?: string; startingPrice?: number; area?: string };
-export type Appointment = { id: string; doctorName: string; hospitalName: string; appointmentDate: string; appointmentTime: string; appointmentMode: string; status: string; reason?: string };
+export type CareItem = { id: string | number; name: string; specialty?: string; qualifications?: string; experience?: string; imageUrl?: string; image_url?: string; consultationFees?: number; consultation_fees?: number; hospital_id?: string | number; email?: string; hospitalName?: string; hospital_name?: string; city?: string; address?: string; description?: string; phone?: string; website?: string; rating?: string | number; availability?: string; startingPrice?: number; area?: string };
+export type Appointment = { id: string; doctorId?: number; doctorName: string; hospitalName: string; appointmentDate: string; appointmentTime: string; appointmentMode: string; status: string; reason?: string };
 export type Post = { id: string; content: string; type: string; imageUrl?: string; mediaUrls?: string[]; createdAt: string; likeCount?: number; commentCount?: number; author: { id: string; name: string; role?: string; image?: string } | null };
 export type InboxItem = { id: string; title: string; content: string; isRead: boolean; link?: string; createdAt: string };
 export type Message = { sender: "user" | "ai"; text: string; image?: string };
@@ -65,4 +66,6 @@ export function createWebApi(origin: string, storage: Store, fetcher: (input: st
     },
   };
 }
-export const api = createWebApi(validateOrigin(webOrigin, typeof __DEV__ !== "undefined" && __DEV__), store);
+const liveApi = createWebApi(validateOrigin(webOrigin, typeof __DEV__ !== "undefined" && __DEV__), store);
+
+export const api = { ...liveApi, async hasSession() { return previewEnabled || liveApi.hasSession(); }, async clear() { if (previewEnabled) stopPreview(); else await liveApi.clear(); }, async request<T>(path: string, options: Parameters<typeof liveApi.request>[1] = {}): Promise<T> { return previewEnabled ? await previewRequest(path, options) as T : liveApi.request<T>(path, options); } };

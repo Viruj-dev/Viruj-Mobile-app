@@ -8,6 +8,8 @@ From this directory run `bun install`. Copy `apps/mobile/.env.example` to `apps/
 
 Run `bun run dev:mobile`, or from `apps/mobile` run `bun run android` / `bun run web`.
 
+For temporary OTP-free UI testing, run `bun run tests/fixture-server.ts` and point `EXPO_PUBLIC_WEB_API_URL` in `apps/mobile/.env.local` at that server (port 8093). Set `FIXTURE_HOST=0.0.0.0` for a physical device and use the computer's LAN address. Restart Expo after changing the URL. Enter any valid Indian mobile number and tap **Continue with OTP**; development builds automatically verify the fixture's test code. This uses synthetic data. Remove the local override to return to the real backend; release builds still require OTP entry.
+
 The app uses the **patient web backend**, `../virujhealthapp`. That backend needs its mobile rewrites, Better Auth bearer plugin, and ownership fixes deployed before mobile sign-in works against it. Existing central API OTP components are retained for reference but are not the active login path: they use different accounts.
 
 ## Checks
