@@ -11,6 +11,7 @@ let initialized = false;
 let sdk: Widget | undefined;
 
 async function widget() {
+  if (typeof document !== "undefined") throw new Error("OTP login requires the Viruj Android or iOS app.");
   sdk ??= (require("@msg91comm/sendotp-react-native") as { OTPWidget: Widget }).OTPWidget;
   if (!initialized) {
     const id = process.env.EXPO_PUBLIC_MSG91_WIDGET_ID?.trim();
