@@ -4,8 +4,6 @@ export type AuthStatus =
   | "authenticated"
   | "requiresOnboarding";
 
-export type AuthPurpose = "LOGIN";
-
 export type SafeMobileUser = {
   id: string;
   phoneNumber: string;

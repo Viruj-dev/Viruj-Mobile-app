@@ -1,37 +1,35 @@
 import { apiClient } from "../../../lib/api-client";
 import { authStorage } from "../services/auth-storage.service";
 import { getOrCreateInstallationId } from "../services/device.service";
+import * as msg91 from "../services/msg91-widget.service";
 import type {
-  AuthPurpose,
   AuthSession,
   AuthSessionState,
   DeviceInfo,
   OtpChallenge,
 } from "./auth.types";
 
-export function requestOtp(phoneNumber: string, purpose: AuthPurpose = "LOGIN") {
-  return apiClient.request<OtpChallenge>("/api/mobile/auth/request-otp", {
-    method: "POST",
-    body: { phoneNumber, purpose },
-  });
+export async function requestOtp(phoneNumber: string): Promise<OtpChallenge> {
+  const result = await msg91.sendOtp(phoneNumber);
+  return { challengeId: result.requestId, expiresInSeconds: 300, retryAfterSeconds: 30 };
 }
 
-export function verifyOtp({
-  challengeId,
+export async function verifyOtp({ challengeId, phoneNumber, otp, device }: { challengeId: string; phoneNumber: string; otp: string; device: DeviceInfo }) {
+  return createWidgetSession({ phoneNumber, accessToken: await msg91.verifyOtp(challengeId, otp), device });
+}
+
+export function createWidgetSession({
   phoneNumber,
-  otp,
+  accessToken,
   device,
-  purpose = "LOGIN",
 }: {
-  challengeId: string;
   phoneNumber: string;
-  otp: string;
+  accessToken: string;
   device: DeviceInfo;
-  purpose?: AuthPurpose;
 }) {
-  return apiClient.request<AuthSession>("/api/mobile/auth/verify-otp", {
+  return apiClient.request<AuthSession>("/api/mobile/auth/widget-session", {
     method: "POST",
-    body: { challengeId, phoneNumber, otp, purpose, device },
+    body: { phoneNumber, accessToken, device },
   });
 }
 

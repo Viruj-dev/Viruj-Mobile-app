@@ -19,7 +19,7 @@ function message(error: unknown) {
 }
 
 export function AuthScreen() {
-  const { requestOtp, verifyOtp } = useSession();
+  const { requestOtp, resendOtp, verifyOtp } = useSession();
   const [flow, setFlow] = useState("phone");
   const [intro, setIntro] = useState(true);
   const [step, setStep] = useState<"phone" | "otp">("phone");
@@ -28,18 +28,17 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [retryAfter, setRetryAfter] = useState(0);
-  const [developmentOtp, setDevelopmentOtp] = useState<string>();
   const input = useRef<TextInput>(null);
   const normalized = useMemo(() => { try { return normalizeIndianPhoneNumber(phone); } catch { return ""; } }, [phone]);
   useBack(!intro && step === "otp", editPhone);
   useEffect(() => { if (!retryAfter) return; const timer = setInterval(() => setRetryAfter(value => Math.max(0, value - 1)), 1000); return () => clearInterval(timer); }, [retryAfter > 0]);
 
-  function editPhone() { if (busy) return; setStep("phone"); setCode(""); setError(""); setDevelopmentOtp(undefined); }
+  function editPhone() { if (busy) return; setStep("phone"); setCode(""); setError(""); }
   async function send() {
     if (busy) return;
     if (!normalized) { setError("Enter a valid 10-digit Indian mobile number."); return; }
     setBusy(true); setError("");
-    try { const result = await requestOtp(normalized); setDevelopmentOtp(result.developmentOtp); setStep("otp"); setRetryAfter(result.retryAfterSeconds); setTimeout(() => input.current?.focus(), 250); }
+    try { const result = await requestOtp(normalized); setStep("otp"); setRetryAfter(result.retryAfterSeconds); setTimeout(() => input.current?.focus(), 250); }
     catch (e) { setError(message(e)); }
     finally { setBusy(false); }
   }
@@ -53,7 +52,7 @@ export function AuthScreen() {
   async function resend() {
     if (busy || retryAfter) return;
     setBusy(true); setError("");
-    try { const result = await requestOtp(normalized); setDevelopmentOtp(result.developmentOtp); setRetryAfter(result.retryAfterSeconds); setCode(""); input.current?.focus(); }
+    try { const result = await resendOtp(normalized); setRetryAfter(result.retryAfterSeconds); setCode(""); input.current?.focus(); }
     catch (e) { setError(message(e)); }
     finally { setBusy(false); }
   }
@@ -66,7 +65,7 @@ export function AuthScreen() {
     {step === "otp" && <Pressable accessibilityRole="button" accessibilityLabel="Edit phone number" onPress={editPhone} style={styles.back}><Glyph name="arrow-back" color="#7F1D1D" /></Pressable>}
     <View style={styles.header}><View style={styles.icon}><Glyph name={step === "phone" ? "phone-portrait-outline" : "shield-checkmark-outline"} color="#7F1D1D" size={32} /></View><Text accessibilityRole="header" style={styles.title}>{step === "phone" ? "Welcome Back" : "Verify OTP"}</Text><Text style={styles.subtitle}>{step === "phone" ? "Sign in with your mobile number" : `Enter the 6-digit code sent to ${maskPhoneNumber(normalized)}.`}</Text></View>
     {step === "phone" ? <View style={{ gap: 20 }}><View style={{ gap: 8 }}><Text style={styles.label}>Mobile Number</Text><View style={styles.phoneField}><View style={styles.prefix}><Text style={styles.prefixText}>+91</Text></View><TextInput accessibilityLabel="Mobile Number" value={formatIndianMobile(phone)} onChangeText={value => { setPhone(toIndianMobileDigits(value)); setError(""); }} keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" maxLength={11} placeholder="98765 43210" placeholderTextColor="#9CA3AF" style={styles.phoneInput} onSubmitEditing={() => void send()} /></View></View>{!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Continue with OTP" busy={busy} onPress={() => void send()} /><Text style={styles.terms}>By continuing, you agree to our <Text accessibilityRole="link" style={styles.link} onPress={() => void Linking.openURL("https://app.virujhealth.com/privacy-policy")}>Privacy Policy</Text>.</Text></View>
-    : <View style={{ gap: 20 }}>{developmentOtp && __DEV__ && <View style={styles.notice}><Text style={styles.noticeText}>Test OTP: {developmentOtp}</Text></View>}<Pressable accessibilityRole="button" accessibilityLabel="Enter verification code" onPress={() => input.current?.focus()} style={styles.codes}>{Array.from({ length: CODE_LENGTH }, (_, index) => <View key={index} style={[styles.code, code[index] && styles.codeActive]}><Text style={styles.codeText}>{code[index] || ""}</Text></View>)}</Pressable><TextInput ref={input} accessibilityLabel="Verification code" value={code} onChangeText={value => { setCode(value.replace(/\D/g, "").slice(0, CODE_LENGTH)); setError(""); }} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={CODE_LENGTH} style={styles.hidden} onSubmitEditing={() => void verify()} />{!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Verify and continue" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={() => void verify()} /><View style={styles.resend}><Text style={styles.resendText}>Did not receive it? </Text><Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || retryAfter > 0 }} disabled={busy || retryAfter > 0} onPress={() => void resend()} style={styles.linkTouch}><Text style={[styles.link, retryAfter > 0 && { color: "#9CA3AF" }]}>{retryAfter > 0 ? `Resend in ${retryAfter}s` : "Resend"}</Text></Pressable></View></View>}
+    : <View style={{ gap: 20 }}><Pressable accessibilityRole="button" accessibilityLabel="Enter verification code" onPress={() => input.current?.focus()} style={styles.codes}>{Array.from({ length: CODE_LENGTH }, (_, index) => <View key={index} style={[styles.code, code[index] && styles.codeActive]}><Text style={styles.codeText}>{code[index] || ""}</Text></View>)}</Pressable><TextInput ref={input} accessibilityLabel="Verification code" value={code} onChangeText={value => { setCode(value.replace(/\D/g, "").slice(0, CODE_LENGTH)); setError(""); }} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={CODE_LENGTH} style={styles.hidden} onSubmitEditing={() => void verify()} />{!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}<Button title="Verify and continue" busy={busy} disabled={code.length !== CODE_LENGTH} onPress={() => void verify()} /><View style={styles.resend}><Text style={styles.resendText}>Did not receive it? </Text><Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || retryAfter > 0 }} disabled={busy || retryAfter > 0} onPress={() => void resend()} style={styles.linkTouch}><Text style={[styles.link, retryAfter > 0 && { color: "#9CA3AF" }]}>{retryAfter > 0 ? `Resend in ${retryAfter}s` : "Resend"}</Text></Pressable></View></View>}
   </View></ScrollView></KeyboardAvoidingView></SafeAreaView>;
 }
 function Button({ title, busy, disabled, onPress }: { title: string; busy: boolean; disabled?: boolean; onPress(): void }) { return <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || disabled, busy }} disabled={busy || disabled} onPress={onPress} style={[styles.button, (busy || disabled) && { opacity: 0.55 }]}>{busy ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>{title}</Text>}</Pressable>; }
@@ -75,6 +74,6 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", marginBottom: 40 }, icon: { width: 64, height: 64, borderRadius: 32, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center", marginBottom: 24 }, title: { fontFamily: "Merienda", fontSize: 36, fontWeight: "700", color: "#111827", textAlign: "center", marginBottom: 8 }, subtitle: { fontFamily: "Merienda", fontSize: 15, lineHeight: 23, color: "#6B7280", textAlign: "center" }, label: { fontFamily: "Merienda", fontSize: 14, fontWeight: "500", color: "#374151" },
   phoneField: { minHeight: 52, flexDirection: "row", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, backgroundColor: "#F9FAFB", overflow: "hidden" }, prefix: { paddingHorizontal: 16, justifyContent: "center", borderRightWidth: 1, borderRightColor: "#E5E7EB" }, prefixText: { fontFamily: "Merienda", fontWeight: "600", color: "#111827" }, phoneInput: { flex: 1, paddingHorizontal: 16, fontFamily: "Merienda", fontSize: 16, color: "#111827" },
   button: { minHeight: 50, borderRadius: 8, backgroundColor: "#7F1D1D", alignItems: "center", justifyContent: "center" }, buttonText: { fontFamily: "Merienda", color: "white", fontSize: 14 }, error: { fontFamily: "Merienda", color: "#DC2626", fontSize: 12, lineHeight: 18 }, terms: { fontFamily: "Merienda", color: "#6B7280", fontSize: 12, lineHeight: 19, textAlign: "center" }, link: { fontFamily: "Merienda", color: "#7F1D1D", fontWeight: "600" }, linkTouch: { minHeight: 44, justifyContent: "center" },
-  codes: { flexDirection: "row", gap: 8 }, code: { flex: 1, height: 58, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, backgroundColor: "#F9FAFB", alignItems: "center", justifyContent: "center" }, codeActive: { borderColor: "#7F1D1D", backgroundColor: "#FEF2F2" }, codeText: { fontFamily: "Merienda", fontSize: 20, fontWeight: "700", color: "#111827" }, hidden: { position: "absolute", width: 1, height: 1, opacity: 0 }, resend: { flexDirection: "row", justifyContent: "center", alignItems: "center" }, resendText: { fontFamily: "Merienda", fontSize: 14, color: "#6B7280" }, notice: { padding: 12, borderRadius: 8, backgroundColor: "#F0FDF4", borderWidth: 1, borderColor: "#BBF7D0" }, noticeText: { fontFamily: "Merienda", textAlign: "center", color: "#166534", fontSize: 13 },
+  codes: { flexDirection: "row", gap: 8 }, code: { flex: 1, height: 58, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, backgroundColor: "#F9FAFB", alignItems: "center", justifyContent: "center" }, codeActive: { borderColor: "#7F1D1D", backgroundColor: "#FEF2F2" }, codeText: { fontFamily: "Merienda", fontSize: 20, fontWeight: "700", color: "#111827" }, hidden: { position: "absolute", width: 1, height: 1, opacity: 0 }, resend: { flexDirection: "row", justifyContent: "center", alignItems: "center" }, resendText: { fontFamily: "Merienda", fontSize: 14, color: "#6B7280" },
 });
 
