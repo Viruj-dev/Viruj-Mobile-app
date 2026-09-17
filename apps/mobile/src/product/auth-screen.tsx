@@ -20,7 +20,7 @@ function message(error: unknown) {
 
 export function AuthScreen() {
   const { requestOtp, verifyOtp } = useSession();
-  const [flow, setFlow] = useState("web-auth");
+  const [flow, setFlow] = useState("phone");
   const [intro, setIntro] = useState(true);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");
@@ -39,7 +39,7 @@ export function AuthScreen() {
     if (busy) return;
     if (!normalized) { setError("Enter a valid 10-digit Indian mobile number."); return; }
     setBusy(true); setError("");
-    try { setDevelopmentOtp(await requestOtp(normalized)); setStep("otp"); setRetryAfter(30); setTimeout(() => input.current?.focus(), 250); }
+    try { const result = await requestOtp(normalized); setDevelopmentOtp(result.developmentOtp); setStep("otp"); setRetryAfter(result.retryAfterSeconds); setTimeout(() => input.current?.focus(), 250); }
     catch (e) { setError(message(e)); }
     finally { setBusy(false); }
   }
@@ -53,13 +53,13 @@ export function AuthScreen() {
   async function resend() {
     if (busy || retryAfter) return;
     setBusy(true); setError("");
-    try { setDevelopmentOtp(await requestOtp(normalized)); setRetryAfter(30); setCode(""); input.current?.focus(); }
+    try { const result = await requestOtp(normalized); setDevelopmentOtp(result.developmentOtp); setRetryAfter(result.retryAfterSeconds); setCode(""); input.current?.focus(); }
     catch (e) { setError(message(e)); }
     finally { setBusy(false); }
   }
   if (intro) return <AuthIntro complete={() => setIntro(false)} />;
-  if (flow === "privacy") return <Privacy back={() => setFlow("web-auth")} navigate={d => setFlow(d.name)} />;
-  if (flow === "reset-password") return <ResetPassword back={() => setFlow("web-auth")} />;
+  if (flow === "privacy") return <Privacy back={() => setFlow("phone")} navigate={d => setFlow(d.name)} />;
+  if (flow === "reset-password") return <ResetPassword back={() => setFlow("phone")} />;
   if (flow === "auth-error") return <AuthError navigate={d => setFlow(d.name)} />;
   if (flow !== "phone") return <WebAuth back={() => setIntro(true)} phone={() => setFlow("phone")} navigate={d => setFlow(d.name)} />;
   return <SafeAreaView style={styles.screen}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}><View style={styles.form}>
@@ -77,3 +77,4 @@ const styles = StyleSheet.create({
   button: { minHeight: 50, borderRadius: 8, backgroundColor: "#7F1D1D", alignItems: "center", justifyContent: "center" }, buttonText: { fontFamily: "Merienda", color: "white", fontSize: 14 }, error: { fontFamily: "Merienda", color: "#DC2626", fontSize: 12, lineHeight: 18 }, terms: { fontFamily: "Merienda", color: "#6B7280", fontSize: 12, lineHeight: 19, textAlign: "center" }, link: { fontFamily: "Merienda", color: "#7F1D1D", fontWeight: "600" }, linkTouch: { minHeight: 44, justifyContent: "center" },
   codes: { flexDirection: "row", gap: 8 }, code: { flex: 1, height: 58, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, backgroundColor: "#F9FAFB", alignItems: "center", justifyContent: "center" }, codeActive: { borderColor: "#7F1D1D", backgroundColor: "#FEF2F2" }, codeText: { fontFamily: "Merienda", fontSize: 20, fontWeight: "700", color: "#111827" }, hidden: { position: "absolute", width: 1, height: 1, opacity: 0 }, resend: { flexDirection: "row", justifyContent: "center", alignItems: "center" }, resendText: { fontFamily: "Merienda", fontSize: 14, color: "#6B7280" }, notice: { padding: 12, borderRadius: 8, backgroundColor: "#F0FDF4", borderWidth: 1, borderColor: "#BBF7D0" }, noticeText: { fontFamily: "Merienda", textAlign: "center", color: "#166534", fontSize: 13 },
 });
+

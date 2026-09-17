@@ -1,45 +1,66 @@
-import { startPreview, previewSession } from "./preview";
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { startPreview, previewSession, previewEnabled } from "./preview";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
-import { api, ApiError, type Session } from "./api";
+import { api, type Session } from "./api";
+import * as authApi from "../features/auth/api/auth.api";
+import type { OtpChallenge } from "../features/auth/api/auth.types";
+import { authStorage } from "../features/auth/services/auth-storage.service";
+import { getDeviceInfo } from "../features/auth/services/device.service";
+import { getAccessToken, setAccessToken } from "../lib/api-client";
 
-type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<string | undefined>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
+type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<OtpChallenge>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const challenge = useRef<{ phoneNumber: string; challengeId: string } | null>(null);
+  const generation = useRef(0);
   const restore = useCallback(async () => {
+    const version = generation.current;
     setError("");
     try {
+      if (previewEnabled) { setSession(previewSession); return; }
       if (!(await api.hasSession())) { setSession(null); return; }
-      const value = await api.request<Session | null>("/auth/get-session");
-      if (!value?.user) { await api.clear(); setSession(null); } else setSession(value);
+      if (!getAccessToken()) await authApi.refreshToken();
+      const value = await authApi.getSession();
+      if (version === generation.current) setSession(value as Session);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) setSession(null);
+      if (version !== generation.current) return;
+      if ([401, 403].includes((e as { status?: number }).status ?? 0)) { await api.clear(); setSession(null); }
       else setError(e instanceof Error ? e.message : "Could not restore session.");
     } finally { setLoading(false); }
   }, []);
   useEffect(() => {
-    api.setUnauthorized(() => setSession(null));
+    api.setUnauthorized(() => { generation.current++; setSession(null); });
     void restore();
     const listener = AppState.addEventListener("change", (state) => { if (state === "active") void restore(); });
     return () => { listener.remove(); api.setUnauthorized(() => {}); };
   }, [restore]);
   async function requestOtp(phoneNumber: string) {
-    const result = await api.request<{ developmentOtp?: string }>("/auth/phone-number/send-otp", { method: "POST", public: true, body: { phoneNumber } });
-    // Local fixture returns its test code; release builds always require manual verification.
-    if (__DEV__ && result.developmentOtp) await verifyOtp(phoneNumber, result.developmentOtp);
-    return result.developmentOtp;
+    challenge.current = null;
+    const result = await authApi.requestOtp(phoneNumber);
+    challenge.current = { phoneNumber, challengeId: result.challengeId };
+    // Real SMS and development codes both require explicit verification.
+    return result;
   }
   async function verifyOtp(phoneNumber: string, code: string) {
-    await api.request("/auth/phone-number/verify", { method: "POST", public: true, body: { phoneNumber, code } });
-    const value = await api.request<Session | null>("/auth/get-session");
-    if (!value?.user) throw new Error("Could not load your account. Please try again.");
-    setSession(value);
+    const pending = challenge.current;
+    if (!pending || pending.phoneNumber !== phoneNumber) throw new Error("Request a new code for this phone number.");
+    const version = generation.current;
+    const result = await authApi.verifyOtp({ ...pending, otp: code, device: await getDeviceInfo() });
+    if (version !== generation.current) return;
+    await authStorage.setRefreshToken(result.refreshToken);
+    if (version !== generation.current) { await authStorage.clearAuthStorage(); return; }
+    setAccessToken(result.accessToken);
+    challenge.current = null;
+    const value = await authApi.getSession();
+    if (version === generation.current) setSession(value as Session);
   }
   async function logout() {
-    try { await api.request("/auth/sign-out", { method: "POST", body: {} }); }
+    generation.current++;
+    challenge.current = null;
+    try { if (!previewEnabled) await authApi.logout(); }
     finally { await api.clear(); setSession(null); setError(""); }
   }
   return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, requestOtp, verifyOtp, logout }}>{children}</Context.Provider>;

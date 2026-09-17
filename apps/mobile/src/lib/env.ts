@@ -57,7 +57,8 @@ export function validateApiBaseUrl(baseUrl = getApiBaseUrl()): string {
   try {
     const parsed = new URL(baseUrl);
 
-    if (!["http:", "https:"].includes(parsed.protocol)) {
+    const development = typeof __DEV__ !== "undefined" ? __DEV__ : process.env.NODE_ENV !== "production";
+    if (!["http:", "https:"].includes(parsed.protocol) || (!development && parsed.protocol !== "https:") || parsed.username || parsed.password || parsed.search || parsed.hash || parsed.pathname !== "/") {
       throw new Error("Invalid protocol");
     }
 

@@ -3,6 +3,7 @@ import type { AuthApiError, AuthErrorCode } from "../api/auth.types";
 const MESSAGES: Record<AuthErrorCode, string> = {
   OTP_INVALID_PHONE_NUMBER: "Enter a valid 10-digit Indian mobile number.",
   OTP_RATE_LIMITED: "Too many OTP requests. Please wait before trying again.",
+  OTP_DELIVERY_FAILED: "SMS could not be sent. Please try again later.",
   OTP_CHALLENGE_NOT_FOUND: "That verification code has expired. Request a new one.",
   OTP_INVALID: "The code you entered is incorrect.",
   OTP_EXPIRED: "That code has expired. Request a new one.",
@@ -21,7 +22,7 @@ const BACKEND_ERROR_CODES: Record<string, AuthErrorCode> = {
   otp_phone_hourly_limit: "OTP_RATE_LIMITED",
   otp_ip_hourly_limit: "OTP_RATE_LIMITED",
   otp_temporarily_blocked: "OTP_RATE_LIMITED",
-  otp_delivery_failed: "OTP_RATE_LIMITED",
+  otp_delivery_failed: "OTP_DELIVERY_FAILED",
   otp_challenge_not_found: "OTP_CHALLENGE_NOT_FOUND",
   otp_challenge_phone_mismatch: "OTP_CHALLENGE_NOT_FOUND",
   otp_challenge_purpose_mismatch: "OTP_CHALLENGE_NOT_FOUND",
@@ -33,6 +34,9 @@ const BACKEND_ERROR_CODES: Record<string, AuthErrorCode> = {
   refresh_token_invalid: "AUTH_INVALID_REFRESH_TOKEN",
   refresh_device_mismatch: "AUTH_INVALID_REFRESH_TOKEN",
   refresh_token_reused: "AUTH_REFRESH_TOKEN_REUSED",
+  refresh_token_reuse_detected: "AUTH_REFRESH_TOKEN_REUSED",
+  refresh_token_expired: "AUTH_INVALID_REFRESH_TOKEN",
+  refresh_session_revoked: "AUTH_SESSION_REVOKED",
   mobile_session_invalid: "AUTH_SESSION_REVOKED",
   mobile_access_token_invalid: "AUTH_UNAUTHORIZED",
 };

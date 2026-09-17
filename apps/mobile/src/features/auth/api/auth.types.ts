@@ -24,6 +24,7 @@ export type AuthSession = {
 export type AuthSessionState = {
   user: SafeMobileUser;
   requiresOnboarding: boolean;
+  session: { expiresAt: string };
 };
 
 export type OtpChallenge = {
@@ -43,6 +44,7 @@ export type DeviceInfo = {
 export type AuthErrorCode =
   | "OTP_INVALID_PHONE_NUMBER"
   | "OTP_RATE_LIMITED"
+  | "OTP_DELIVERY_FAILED"
   | "OTP_CHALLENGE_NOT_FOUND"
   | "OTP_INVALID"
   | "OTP_EXPIRED"

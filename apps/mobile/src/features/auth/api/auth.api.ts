@@ -1,4 +1,6 @@
 import { apiClient } from "../../../lib/api-client";
+import { authStorage } from "../services/auth-storage.service";
+import { getOrCreateInstallationId } from "../services/device.service";
 import type {
   AuthPurpose,
   AuthSession,
@@ -44,9 +46,11 @@ export function getSession() {
   });
 }
 
-export function logout() {
+export async function logout() {
+  const refreshToken = await authStorage.getRefreshToken();
+  if (!refreshToken) return;
   return apiClient.request<void>("/api/mobile/auth/logout", {
     method: "POST",
-    auth: true,
+    body: { refreshToken, deviceId: await getOrCreateInstallationId() },
   });
 }

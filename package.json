@@ -5,7 +5,7 @@
     "apps/mobile"
   ],
   "scripts": {
-    "dev:api": "bun --cwd ../virujhealthapp run dev",
+    "dev:api": "bun --cwd ../viruj-backend run dev:mobile",
     "dev:mobile": "bun --cwd apps/mobile start",
     "dev": "bun run dev:api & bun run dev:mobile"
   },

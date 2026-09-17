@@ -4,13 +4,18 @@ Native Expo 54 / React Native 0.81 application. Application ID: `com.virujhealth
 
 ## Development
 
-From this directory run `bun install`. Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set the public origin of your test web backend. For an Android emulator use `http://10.0.2.2:3000`; for a physical device use the computer's LAN address. Never bundle database credentials or provider secrets.
+Run `bun install`. The mobile app uses **`../viruj-backend`** for OTP authentication and all mobile API traffic.
+See [MSG91 setup](../viruj-backend/docs/mobile-msg91.md) for server credentials and local testing.
 
-Run `bun run dev:mobile`, or from `apps/mobile` run `bun run android` / `bun run web`.
+Set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env.local` to the backend on port 4000.
+Use `http://10.0.2.2:4000` for Android emulator or your computer's LAN IP for a physical phone.
+Never bundle database credentials or MSG91 secrets. Restart Expo after changing the URL.
 
-For temporary OTP-free UI testing, run `bun run tests/fixture-server.ts` and point `EXPO_PUBLIC_WEB_API_URL` in `apps/mobile/.env.local` at that server (port 8093). Set `FIXTURE_HOST=0.0.0.0` for a physical device and use the computer's LAN address. Restart Expo after changing the URL. Enter any valid Indian mobile number and tap **Continue with OTP**; development builds automatically verify the fixture's test code. This uses synthetic data. Remove the local override to return to the real backend; release builds still require OTP entry.
+Run `bun run dev:api` and `bun run dev:mobile` in separate terminals.
+Phone OTP is the default login. Enter the received code explicitly, including when using development codes.
+Use the built-in **Explore UI preview** for synthetic offline data; the old web-auth fixture server is not the live auth contract.
 
-The app uses the **patient web backend**, `../virujhealthapp`. That backend needs its mobile rewrites, Better Auth bearer plugin, and ownership fixes deployed before mobile sign-in works against it. Existing central API OTP components are retained for reference but are not the active login path: they use different accounts.
+Only the existing central backend endpoints are available. Web-only feature endpoints still need implementation in viruj-backend; the app does not fall back to virujhealthapp.
 
 ## Checks
 
@@ -43,3 +48,4 @@ See `docs/FEATURE-PARITY.md` for workflow scope and unverified integrations. Imp
 ### Review every web app page
 
 On the development launch screen, choose **Review all web app pages** for the 25-route UI review menu, or **Explore UI preview** for the normal navigation. Both use local sample data and need no OTP. The mobile pages follow the corresponding `virujhealthapp/src/app` source; backend-dependent operations remain a separate phase. See `docs/FEATURE-PARITY.md` for the exact integration and verification boundaries.
+

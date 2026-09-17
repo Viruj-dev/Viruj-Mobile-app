@@ -8,6 +8,8 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   auth?: boolean;
   retry?: boolean;
+  binary?: boolean;
+  unwrap?: boolean;
 };
 
 type ApiClientOptions = {
@@ -23,11 +25,12 @@ type ApiClientOptions = {
 };
 
 let accessToken: string | null = null;
-let refreshPromise: Promise<AuthSession> | null = null;
+let sessionGeneration = 0;
 let authFailureHandler: (() => void) | null = null;
 let sessionRefreshedHandler: ((session: AuthSession) => void) | null = null;
 
 export function setAccessToken(token: string | null) {
+  sessionGeneration++;
   accessToken = token;
 }
 
@@ -104,8 +107,10 @@ export function createApiClient({
   onSessionRefreshed,
   onAuthFailed,
 }: ApiClientOptions = {}) {
+  let refreshPromise: Promise<AuthSession> | null = null;
   async function refreshSession(): Promise<AuthSession> {
     if (!refreshPromise) {
+      const generation = sessionGeneration;
       refreshPromise = (async () => {
         const refreshToken = await storage.getRefreshToken();
 
@@ -129,8 +134,14 @@ export function createApiClient({
         }
 
         const session = unwrapPayload(payload) as AuthSession;
+        if (generation !== sessionGeneration) throw createAuthApiError({ code: "AUTH_UNAUTHORIZED", status: 401 });
+        if (!session?.accessToken || !session.refreshToken) throw createAuthApiError({ code: "UNKNOWN", status: 502 });
         await storage.setRefreshToken(session.refreshToken);
-        setAccessToken(session.accessToken);
+        if (generation !== sessionGeneration) { await storage.clearAuthStorage(); throw createAuthApiError({ code: "AUTH_UNAUTHORIZED", status: 401 }); }
+        accessToken = session.accessToken;
+        // Refresh returns tokens only; load the safe user shape before notifying consumers.
+        const state = await request<{ user: AuthSession["user"]; requiresOnboarding: boolean }>("/api/mobile/auth/session", { auth: true, retry: false });
+        Object.assign(session, state);
         onSessionRefreshed?.(session);
         sessionRefreshedHandler?.(session);
         return session;
@@ -143,9 +154,11 @@ export function createApiClient({
   }
 
   async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    if (!path.startsWith("/") || path.startsWith("//") || path.includes("..")) throw new Error("Invalid API path");
+    const generation = sessionGeneration;
     const headers = new Headers(options.headers);
-
-    if (options.body !== undefined) {
+    const multipart = typeof FormData !== "undefined" && options.body instanceof FormData;
+    if (options.body !== undefined && !multipart) {
       headers.set("Content-Type", "application/json");
     }
 
@@ -156,19 +169,25 @@ export function createApiClient({
     const response = await sendRequest(fetcher, `${baseUrl}${path}`, {
       ...options,
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      credentials: "omit",
+      signal: options.signal ?? AbortSignal.timeout(path.includes("/ai/") ? 90_000 : 20_000),
+      body: options.body === undefined ? undefined : multipart ? options.body as FormData : JSON.stringify(options.body),
     });
-    const payload = await parseResponse(response);
+    const payload = options.binary && response.ok ? await response.arrayBuffer() : await parseResponse(response);
+    if (options.auth && generation !== sessionGeneration) throw createAuthApiError({ code: "AUTH_UNAUTHORIZED", status: 401 });
 
     if (response.status === 401 && options.auth && options.retry !== false) {
       try {
         await refreshSession();
         return request<T>(path, { ...options, retry: false });
       } catch (error) {
-        await storage.clearAuthStorage();
-        setAccessToken(null);
-        onAuthFailed?.();
-        authFailureHandler?.();
+        const status = (error as { status?: number }).status;
+        if ((status === 401 || status === 403) && generation === sessionGeneration) {
+          setAccessToken(null);
+          await storage.clearAuthStorage();
+          onAuthFailed?.();
+          authFailureHandler?.();
+        }
         throw error;
       }
     }
@@ -180,7 +199,7 @@ export function createApiClient({
       });
     }
 
-    return unwrapPayload(payload) as T;
+    return (options.unwrap === false ? payload : unwrapPayload(payload)) as T;
   }
 
   return {
