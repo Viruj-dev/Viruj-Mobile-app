@@ -5,21 +5,21 @@ type Widget = {
   verifyOTP(body: { reqId: string; otp: string }): Promise<unknown>;
 };
 
+const { OTPWidget } = require("@msg91comm/sendotp-react-native") as { OTPWidget: Widget };
+
 type Response = { type?: string; message?: string; "access-token"?: string };
 
 let initialized = false;
-let sdk: Widget | undefined;
 
 async function widget() {
-  sdk ??= (require("@msg91comm/sendotp-react-native") as { OTPWidget: Widget }).OTPWidget;
   if (!initialized) {
     const id = process.env.EXPO_PUBLIC_MSG91_WIDGET_ID?.trim();
     const token = process.env.EXPO_PUBLIC_MSG91_WIDGET_TOKEN?.trim();
     if (!id || !token) throw new Error("MSG91 widget is not configured.");
-    await sdk.initializeWidget(id, token);
+    await OTPWidget.initializeWidget(id, token);
     initialized = true;
   }
-  return sdk;
+  return OTPWidget;
 }
 
 function success(response: Response | undefined, value: "message" | "access-token") {

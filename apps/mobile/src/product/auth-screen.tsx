@@ -11,6 +11,8 @@ import { Glyph, useBack } from "./ui";
 const CODE_LENGTH = 6;
 function message(error: unknown) {
   const value = error instanceof Error ? error.message.toLowerCase() : "";
+  if (value.includes("ipblocked") || value.includes("ip blocked")) return "Too many OTP requests. Please wait before trying again.";
+  if (value.includes("authenticationfailure")) return "OTP service configuration was rejected by MSG91.";
   if (value.includes("invalid otp")) return "The code you entered is incorrect.";
   if (value.includes("expired")) return "That code has expired. Request a new one.";
   if (value.includes("too many")) return "Too many attempts. Request a new code.";
