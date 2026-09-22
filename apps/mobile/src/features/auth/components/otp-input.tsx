@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
-const CODE_LENGTH = 6;
+import { OTP_CODE_LENGTH as CODE_LENGTH } from "../api/auth.types";
 
 export function OtpInput({
   value,

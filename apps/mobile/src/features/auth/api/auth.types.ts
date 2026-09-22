@@ -1,3 +1,6 @@
+// Configure the MSG91 mobile widget to generate the same OTP length.
+export const OTP_CODE_LENGTH = 6;
+
 export type AuthStatus =
   | "bootstrapping"
   | "unauthenticated"

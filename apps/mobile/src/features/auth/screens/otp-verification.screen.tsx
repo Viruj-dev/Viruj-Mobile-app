@@ -1,3 +1,4 @@
+import { OTP_CODE_LENGTH } from "../api/auth.types";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import {
@@ -59,7 +60,7 @@ export function OtpVerificationScreen({
   }
 
   const verify = async () => {
-    if (code.length !== 6 || isVerifying) {
+    if (code.length !== OTP_CODE_LENGTH || isVerifying) {
       return;
     }
 
@@ -98,7 +99,7 @@ export function OtpVerificationScreen({
       <AuthHeader
         align="left"
         title="Verify OTP"
-        subtitle={`Enter the 6-digit code sent to ${maskPhoneNumber(challenge.phoneNumber)}.`}
+        subtitle={`Enter the ${OTP_CODE_LENGTH}-digit code sent to ${maskPhoneNumber(challenge.phoneNumber)}.`}
       />
 
       {shouldShowDevelopmentOtp(__DEV__, challenge.developmentOtp) ? (
@@ -126,7 +127,7 @@ export function OtpVerificationScreen({
         label="Verify and continue"
         onPress={verify}
         loading={isVerifying}
-        disabled={code.length !== 6 || expiresIn === 0}
+        disabled={code.length !== OTP_CODE_LENGTH || expiresIn === 0}
       />
 
       <View className="mt-6 flex-row items-center justify-center">
