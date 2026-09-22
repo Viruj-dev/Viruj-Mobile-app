@@ -25,7 +25,7 @@ export function PatientApp() {
   const { session, loading, error, restore, logout, preview } = useSession();
   if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
   if (!session && error) return <Screen title="Connection unavailable"><ErrorText message={error} /><Button title="Try again" onPress={() => void restore()} /><Button title="Sign in with another account" secondary onPress={() => void logout().catch(() => {})} /></Screen>;
-  if (!session) return <View style={{ flex: 1 }}><AuthScreen />{__DEV__ && <View style={{ padding: 12, backgroundColor: colors.bg }}><Button title="Explore UI preview" secondary onPress={() => { setReviewPages(false); preview(); }} /><Button title="Review all web app pages" secondary onPress={() => { setReviewPages(true); preview(); }} /></View>}</View>;
+  if (!session) return <View style={{ flex: 1 }}><AuthScreen />{__DEV__ && process.env.EXPO_PUBLIC_ENABLE_UI_PREVIEW === "true" && <View style={{ padding: 12, backgroundColor: colors.bg }}><Button title="Sample data preview (offline)" secondary onPress={() => { setReviewPages(false); preview(); }} /><Button title="Review all web app pages" secondary onPress={() => { setReviewPages(true); preview(); }} /></View>}</View>;
   return <Workspace key={session.user.id} reviewPages={reviewPages} />;
 }
 function Workspace({ reviewPages }: { reviewPages: boolean }) {
