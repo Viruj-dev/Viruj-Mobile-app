@@ -72,11 +72,30 @@ export function Home({ navigate }: { navigate: Navigate }) {
 function SectionTitle({ title, detail, onPress }: { title: string; detail: string; onPress(): void }) {
   return <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}><View style={{ flex: 1, gap: 4 }}><Text accessibilityRole="header" style={{ fontSize: 20, color: "#DC2626" }}>{title}</Text><Text style={{ fontSize: 12, color: "#6B7280" }}>{detail}</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`View all ${title}`} onPress={onPress} style={{ flexDirection: "row", alignItems: "center", minHeight: 44 }}><Text style={{ fontSize: 14, fontWeight: "600", color: "#DC2626" }}>View all</Text><Glyph name="chevron-forward" size={16} color="#DC2626" /></Pressable></View>;
 }
+export function cleanQualifications(text?: string, maxChars = 65): string {
+  if (!text) return "";
+  let clean = text.trim();
+  const match = clean.match(/^([A-Za-z0-9(),.\s\/-]+?)(?:,\s*(?:Life\s*Time|Award|Ex[\s.-]|Former|Distinguished|Certificate|Silver|Gold|Fellow|Member\s+of|President|Dean|HOD|Professor|Published|Author|Awarded))/i);
+  if (match && match[1] && match[1].length > 2) {
+    clean = match[1].trim();
+  }
+  if (clean.length > maxChars) {
+    const cut = clean.slice(0, maxChars);
+    const lastComma = cut.lastIndexOf(",");
+    if (lastComma > 20) {
+      clean = cut.slice(0, lastComma).trim();
+    } else {
+      clean = cut.trim().replace(/[,;\s.-]+$/, "") + "...";
+    }
+  }
+  return clean.replace(/[,;\s.-]+$/, "");
+}
+
 function FeaturedCard({ item, kind, navigate }: { item: CareItem; kind: string; navigate: Navigate }) {
   const [failed, setFailed] = useState(false);
   const photo = item.image_url || item.imageUrl;
   const doctor = kind === "doctors";
-  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name}`} onPress={() => navigate({ name: "detail", kind, id: String(item.id) })} style={h.card}><View style={{ width: doctor ? 80 : 112, height: doctor ? 80 : 96, borderRadius: doctor ? 40 : 6, overflow: "hidden", backgroundColor: doctor ? "#DBEAFE" : "#FEE2E2", alignItems: "center", justifyContent: "center" }}>{photo && !failed ? <Image source={{ uri: photo.startsWith("/") ? `${webOrigin}${photo}` : photo }} onError={() => setFailed(true)} style={{ width: "100%", height: "100%" }} /> : <Glyph name={doctor ? "person-outline" : "business-outline"} size={40} color={doctor ? "#60A5FA" : "#F87171"} />}</View><View style={{ flex: 1, gap: 6 }}><Text numberOfLines={1} style={{ fontSize: doctor ? 18 : 16, fontWeight: "700", color: "#111827" }}>{item.name}</Text>{item.specialty && <Text numberOfLines={1} style={{ fontSize: 14, color: "#2563EB" }}>{item.specialty}</Text>}{item.qualifications && <Text numberOfLines={2} ellipsizeMode="tail" style={h.detail}>{item.qualifications}</Text>}{item.hospital_name && <Text numberOfLines={1} style={h.badge}>{item.hospital_name}</Text>}{item.city && <Text numberOfLines={1} style={h.detail}>{item.city}</Text>}{item.consultation_fees != null && <Text style={h.detail}>Fee: ₹{item.consultation_fees}</Text>}{item.availability && <Text numberOfLines={1} style={h.detail}>{item.availability}</Text>}{item.rating != null && <Text style={{ fontSize: 12, color: "#B45309" }}>★ {item.rating}</Text>}</View></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.name}`} onPress={() => navigate({ name: "detail", kind, id: String(item.id) })} style={h.card}><View style={{ width: doctor ? 80 : 112, height: doctor ? 80 : 96, borderRadius: doctor ? 40 : 6, overflow: "hidden", backgroundColor: doctor ? "#DBEAFE" : "#FEE2E2", alignItems: "center", justifyContent: "center" }}>{photo && !failed ? <Image source={{ uri: photo.startsWith("/") ? `${webOrigin}${photo}` : photo }} onError={() => setFailed(true)} style={{ width: "100%", height: "100%" }} /> : <Glyph name={doctor ? "person-outline" : "business-outline"} size={40} color={doctor ? "#60A5FA" : "#F87171"} />}</View><View style={{ flex: 1, gap: 6, minWidth: 0, overflow: "hidden" }}><Text numberOfLines={1} style={{ fontSize: doctor ? 18 : 16, fontWeight: "700", color: "#111827" }}>{item.name}</Text>{item.specialty && <Text numberOfLines={1} style={{ fontSize: 14, color: "#2563EB" }}>{item.specialty}</Text>}{item.qualifications && <Text numberOfLines={2} ellipsizeMode="tail" style={[h.detail, { flexShrink: 1 }]}>{cleanQualifications(item.qualifications, 65)}</Text>}{item.hospital_name && <Text numberOfLines={1} style={h.badge}>{item.hospital_name}</Text>}{item.city && <Text numberOfLines={1} style={h.detail}>{item.city}</Text>}{item.consultation_fees != null && <Text style={h.detail}>Fee: ₹{item.consultation_fees}</Text>}{item.availability && <Text numberOfLines={1} style={h.detail}>{item.availability}</Text>}{item.rating != null && <Text style={{ fontSize: 12, color: "#B45309" }}>★ {item.rating}</Text>}</View></Pressable>;
 }
 const h = StyleSheet.create({
   header: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, backgroundColor: "#62090F" },

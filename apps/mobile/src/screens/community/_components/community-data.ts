@@ -126,3 +126,51 @@ export function makeMorePosts(start: number, count: number): FeedPost[] {
     };
   });
 }
+
+export function mapBackendPostToFeedPost(p: any): FeedPost {
+  const tagsStr = Array.isArray(p.diseaseTags) && p.diseaseTags.length > 0
+    ? p.diseaseTags.map((t: string) => (t.startsWith("#") ? t : `#${t}`)).join(" ")
+    : (p.type && p.type !== "update" ? `#${p.type}` : "#VirujCommunity");
+
+  const authorName = p.author?.name || "Community Member";
+  const authorRole = p.author?.role
+    ? (p.author.role === "doctor" ? "Doctor" : p.author.role === "admin" ? "Administrator" : "Member")
+    : "Member";
+
+  let timeStr = "Recently";
+  if (p.createdAt) {
+    try {
+      const diffMs = Date.now() - new Date(p.createdAt).getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffMins < 1) timeStr = "Just now";
+      else if (diffMins < 60) timeStr = `${diffMins}m ago`;
+      else if (diffHours < 24) timeStr = `${diffHours}h ago`;
+      else timeStr = `${diffDays}d ago`;
+    } catch {
+      timeStr = "Recently";
+    }
+  }
+
+  const defaultAvatar = doctorPortraits[0];
+  const avatar = p.author?.image || defaultAvatar;
+  const image = p.imageUrl || (Array.isArray(p.mediaUrls) && p.mediaUrls.length > 0 ? p.mediaUrls[0] : "");
+
+  return {
+    id: String(p.id),
+    author: authorName,
+    role: authorRole,
+    time: timeStr,
+    body: p.content || "",
+    tags: tagsStr,
+    image: image || "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80",
+    likes: Number(p.likeCount ?? 0),
+    comments: Number(p.commentCount ?? 0),
+    liked: Boolean(p.isLiked),
+    saved: Boolean(p.isBookmarked),
+    avatar: avatar,
+    verified: Boolean(p.isVerified || p.isDoctorPost),
+  };
+}
+

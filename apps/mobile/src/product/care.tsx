@@ -4,7 +4,7 @@ export { SearchInput, Stars } from "./web-controls";
 import { useEffect, useState } from "react";
 import { Image, Linking, Pressable, Text, TextInput, View } from "react-native";
 import { type CareItem, webOrigin } from "./api";
-import { type Navigate } from "./home";
+import { type Navigate, cleanQualifications } from "./home";
 import {
   Body,
   Button,
@@ -142,9 +142,9 @@ export function ProviderCard({
                   <Body
                     numberOfLines={2}
                     ellipsizeMode="tail"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 12, flexShrink: 1 }}
                   >
-                    {item.qualifications}
+                    {cleanQualifications(item.qualifications, 65)}
                   </Body>
                 )}
                 {item.experience && (
@@ -484,11 +484,11 @@ function ProviderDetail({
                 </Body>
                 {doctor && item.qualifications && (
                   <Body
-                    numberOfLines={3}
+                    numberOfLines={2}
                     ellipsizeMode="tail"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 12, flexShrink: 1 }}
                   >
-                    {item.qualifications}
+                    {cleanQualifications(item.qualifications, 80)}
                   </Body>
                 )}
                 <Stars value={item.rating} reviews={item.totalReviews ?? 0} />
