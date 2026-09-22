@@ -8,6 +8,7 @@ import { authStorage } from "../features/auth/services/auth-storage.service";
 import { getDeviceInfo } from "../features/auth/services/device.service";
 import * as msg91 from "../features/auth/services/msg91-widget.service";
 import { getAccessToken, setAccessToken } from "../lib/api-client";
+import { devAuthBypass, devSession } from "./dev-session";
 
 type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<OtpChallenge>; resendOtp(phoneNumber: string): Promise<OtpChallenge>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
@@ -21,6 +22,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const version = generation.current;
     setError("");
     try {
+      if (devAuthBypass) { setSession(devSession); return; }
       if (previewEnabled) { setSession(previewSession); return; }
       if (!(await api.hasSession())) { setSession(null); return; }
       if (!getAccessToken()) await authApi.refreshToken();
@@ -70,7 +72,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function logout() {
     generation.current++;
     challenge.current = null;
-    try { if (!previewEnabled) await authApi.logout(); }
+    try { if (!previewEnabled && !devAuthBypass) await authApi.logout(); }
     finally { await api.clear(); setSession(null); setError(""); }
   }
   return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, requestOtp, resendOtp, verifyOtp, logout }}>{children}</Context.Provider>;

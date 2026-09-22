@@ -1,6 +1,7 @@
 import { apiClient, setAccessToken, setAuthFailureHandler } from "../lib/api-client";
 import { authStorage } from "../features/auth/services/auth-storage.service";
 import { previewEnabled, previewRequest, stopPreview } from "./preview";
+import { devAuthBypass } from "./dev-session";
 export type Session = { user: { id: string; name: string; email: string; image?: string | null; role?: string; onboardingCompleted?: boolean }; session: { expiresAt: string } };
 export type Profile = Session["user"] & { phoneNumber?: string | null; age?: number | null; gender?: string | null; bloodGroup?: string | null; height?: string | null; weight?: string | null; address?: string | null; recentAppointments?: string | null; medicalHistory?: string | null };
 export type Practice = { id: string; tenantId: string; clinicId: string; locationId?: string; hospitalId?: number; name: string; address?: string; bookingEnabled: boolean; modes: string[] };
@@ -26,7 +27,7 @@ export const api = {
   async request<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal; public?: boolean; binary?: boolean } = {}): Promise<T> {
     if (previewEnabled) return await previewRequest(path, options) as T;
     try {
-      return await apiClient.request<T>(`/api/mobile${path}`, { ...options, auth: !options.public, unwrap: false });
+      return await apiClient.request<T>(`/api/mobile${path}`, { ...options, auth: !options.public && !devAuthBypass, unwrap: false });
     } catch (error) {
       const failure = error as { message?: string; status?: number };
       throw new ApiError(failure.message || "Could not complete this request.", failure.status ?? 0);

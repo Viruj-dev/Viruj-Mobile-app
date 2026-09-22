@@ -19,6 +19,7 @@ import { useSession } from "./session";
 import { Body, Button, colors, ErrorText, Glyph, ResourceState, Row, Screen, useResource, type Icon } from "./ui";
 import { previewEnabled } from "./preview";
 import { type CareItem } from "./api";
+import { devAuthBypass } from "./dev-session";
 const tabs: { name: string; label: string; icon: Icon }[] = [{ name: "home", label: "Home", icon: "home" }, { name: "health", label: "My Health", icon: "shield-checkmark" }, { name: "chat", label: "Ask AI", icon: "sparkles-outline" }, { name: "community", label: "Community", icon: "people-outline" }, { name: "profile", label: "Profile", icon: "person-circle" }];
 export function PatientApp() {
   const [reviewPages, setReviewPages] = useState(false);
@@ -26,7 +27,7 @@ export function PatientApp() {
   if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
   if (!session && error) return <Screen title="Connection unavailable"><ErrorText message={error} /><Button title="Try again" onPress={() => void restore()} /><Button title="Sign in with another account" secondary onPress={() => void logout().catch(() => {})} /></Screen>;
   if (!session) return <View style={{ flex: 1 }}><AuthScreen />{__DEV__ && process.env.EXPO_PUBLIC_ENABLE_UI_PREVIEW === "true" && <View style={{ padding: 12, backgroundColor: colors.bg }}><Button title="Sample data preview (offline)" secondary onPress={() => { setReviewPages(false); preview(); }} /><Button title="Review all web app pages" secondary onPress={() => { setReviewPages(true); preview(); }} /></View>}</View>;
-  return <Workspace key={session.user.id} reviewPages={reviewPages} />;
+  return <View style={{ flex: 1 }}>{devAuthBypass && <View style={{ padding: 8, backgroundColor: "#FEF3C7" }}><Body>Development test session · Live backend data</Body></View>}<Workspace key={session.user.id} reviewPages={reviewPages} /></View>;
 }
 function Workspace({ reviewPages }: { reviewPages: boolean }) {
   const insets = useSafeAreaInsets(); const [tab, setTab] = useState(reviewPages ? "web-pages" : "home"); const [stack, setStack] = useState<Destination[]>([]);
