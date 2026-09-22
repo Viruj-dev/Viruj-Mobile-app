@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { FlatList, ListRenderItem, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppTabBar, { AppTab } from "../../_components/AppTabBar";
+import AdBannerSection from "./ad-banner-section";
 import ConcernGrid from "./concern-grid";
 import EmptyDesignCard from "./empty-design-card";
 import { EmptyCard, makeEmptyCards } from "./home-data";
@@ -18,6 +19,7 @@ function HomeContent({ onLogout }: { onLogout?: () => void }) {
       <WelcomeCard />
       <ConcernGrid />
       <PriorityCard />
+      <AdBannerSection />
       <OffersSection />
       <SectionHeader
         title="More for you"
