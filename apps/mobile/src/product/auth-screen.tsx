@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
+import { GoogleSignInButton } from "react-native-nitro-google-signin";
 import { useSession } from "./session";
 
 export function AuthScreen() {
@@ -25,7 +25,7 @@ export function AuthScreen() {
     <View style={styles.brand}><Image source={require("../../assets/auth/virujlogo.png")} style={styles.logo} resizeMode="contain" /><Text style={styles.brandName}>VIRUJ HEALTH</Text></View>
     <View style={styles.heading}><Text style={styles.title}>Your health, all in one place.</Text><Text style={styles.subtitle}>Sign in or create your account to get started.</Text></View>
     <View style={styles.actions}>
-      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : <GoogleSigninButton accessibilityLabel="Continue with Google" color={GoogleSigninButton.Color.Light} size={GoogleSigninButton.Size.Wide} disabled={busy !== null} onPress={() => void continueWith("google")} />}</View>
+      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy !== null} onPress={() => void continueWith("google")} />}</View>
       <Pressable accessibilityRole="button" accessibilityLabel="Continue with Facebook" accessibilityState={{ disabled: busy !== null, busy: busy === "facebook" }} disabled={busy !== null} onPress={() => void continueWith("facebook")} style={styles.facebook}>{busy === "facebook" ? <ActivityIndicator color="white" /> : <><Text style={styles.facebookMark}>f</Text><Text style={styles.facebookText}>Continue with Facebook</Text></>}</Pressable>
       {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     </View>

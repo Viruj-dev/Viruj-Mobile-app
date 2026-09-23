@@ -5,7 +5,7 @@ import { api, type Session } from "./api";
 import * as authApi from "../features/auth/api/auth.api";
 import { authStorage } from "../features/auth/services/auth-storage.service";
 import { getDeviceInfo } from "../features/auth/services/device.service";
-import { signInWithProvider } from "../features/auth/services/social-signin.service";
+import { signInWithProvider, signOutFromProviders } from "../features/auth/services/social-signin.service";
 import { getAccessToken, setAccessToken } from "../lib/api-client";
 import { devAuthBypass, devSession } from "./dev-session";
 
@@ -58,7 +58,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   async function logout() {
     generation.current++;
     try { if (!previewEnabled && !devAuthBypass) await authApi.logout(); }
-    finally { await api.clear(); setSession(null); setError(""); }
+    finally { await api.clear(); await signOutFromProviders().catch(() => {}); setSession(null); setError(""); }
   }
   return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, signIn, logout }}>{children}</Context.Provider>;
 }

@@ -10,7 +10,7 @@ module.exports = () => {
     ios: { ...expo.ios, bundleIdentifier: "com.virujhealth.app" },
     plugins: [
       ...expo.plugins,
-      ["@react-native-google-signin/google-signin", { iosUrlScheme: googleIosClientId.split(".").reverse().join(".") }],
+      ["react-native-nitro-google-signin", { iosUrlScheme: googleIosClientId.split(".").reverse().join(".") }],
       ["react-native-fbsdk-next", { appID: facebookAppId, clientToken: facebookClientToken, displayName: "Viruj Health", scheme: `fb${facebookAppId}`, advertiserIDCollectionEnabled: false, autoLogAppEventsEnabled: false, isAutoInitEnabled: true }],
     ],
   };
