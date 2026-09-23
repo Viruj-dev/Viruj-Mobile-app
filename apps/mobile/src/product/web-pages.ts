@@ -1,5 +1,5 @@
 import { type Destination } from "./home";
-// Each Next.js page in virujhealthapp/src/app has a native review destination.
+// Each product page in virujhealthapp/src/app has a native review destination; mobile auth uses its own screen.
 export const webPages: { path: string; destination: Destination }[] = [
   { path: "/", destination: { name: "home" } },
   { path: "/onboarding", destination: { name: "onboarding" } },

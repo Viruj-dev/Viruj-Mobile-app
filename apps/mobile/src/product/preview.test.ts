@@ -42,7 +42,7 @@ import { resolve } from "node:path";
 import { webPages } from "./web-pages";
 const webApp = resolve(import.meta.dir, "../../../../../virujhealthapp/src/app");
 (existsSync(webApp) ? test : test.skip)("every source web page has a mobile review destination", () => {
-  const source = [...new Glob("**/page.tsx").scanSync({ cwd: webApp })].map(path => "/" + path.replaceAll("\\", "/").replace(/(^|\/)page\.tsx$/, ""));
+  const source = [...new Glob("**/page.tsx").scanSync({ cwd: webApp })].map(path => "/" + path.replaceAll("\\", "/").replace(/(^|\/)page\.tsx$/, "")).filter(path => !path.startsWith("/auth"));
   expect(webPages.map(page => page.path).sort()).toEqual(source.sort());
 });
 test("story media and AI report UI states stay in the local preview", async () => {
