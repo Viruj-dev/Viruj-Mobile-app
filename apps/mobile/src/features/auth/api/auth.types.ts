@@ -1,6 +1,3 @@
-// Configure the MSG91 mobile widget to generate the same OTP length.
-export const OTP_CODE_LENGTH = 6;
-
 export type AuthStatus =
   | "bootstrapping"
   | "unauthenticated"
@@ -28,13 +25,6 @@ export type AuthSessionState = {
   session: { expiresAt: string };
 };
 
-export type OtpChallenge = {
-  challengeId: string;
-  expiresInSeconds: number;
-  retryAfterSeconds: number;
-  developmentOtp?: string;
-};
-
 export type DeviceInfo = {
   deviceId: string;
   platform: "android" | "ios";
@@ -43,14 +33,6 @@ export type DeviceInfo = {
 };
 
 export type AuthErrorCode =
-  | "OTP_INVALID_PHONE_NUMBER"
-  | "OTP_RATE_LIMITED"
-  | "OTP_DELIVERY_FAILED"
-  | "OTP_CHALLENGE_NOT_FOUND"
-  | "OTP_INVALID"
-  | "OTP_EXPIRED"
-  | "OTP_ALREADY_USED"
-  | "OTP_TOO_MANY_ATTEMPTS"
   | "AUTH_INVALID_REFRESH_TOKEN"
   | "AUTH_REFRESH_TOKEN_REUSED"
   | "AUTH_SESSION_REVOKED"

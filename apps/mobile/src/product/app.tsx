@@ -1,7 +1,7 @@
 import { webPages } from "./web-pages";
 import { Support } from "./more-screens";
 import { Privacy, PublicDeletion } from "./legal";
-import { Setup, AuthError, ResetPassword, WebAuth } from "./setup";
+import { Setup } from "./setup";
 import { Reports } from "./reports";
 import { BlurView } from "expo-blur";
 import { useEffect, useState } from "react";
@@ -48,9 +48,6 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   else if (name === "delete-account") screen = <DeleteAccount back={back} navigate={navigate} />;
   else if (name === "department-doctors") screen = <Care kind="doctors" department={route!.query} back={back} navigate={navigate} />;
   else if (name === "profile-setup" || name === "onboarding") screen = <Setup compact={name === "onboarding"} back={back} />;
-  else if (name === "auth-error") screen = <AuthError navigate={navigate} />;
-  else if (name === "reset-password") screen = <ResetPassword back={back} />;
-  else if (name === "web-auth") screen = <WebAuth back={back} navigate={navigate} />;
   else if (name === "public-deletion") screen = <PublicDeletion back={back} navigate={navigate} />;
   else if (name === "pathlab-placeholder") screen = <Screen title="Pathlab Details" back={back}><Body>Please select a pathlab from the list to view details.</Body></Screen>;
   else if (name === "reports") screen = <Reports back={back} />;
@@ -61,5 +58,6 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   else if (name === "community") screen = <Community />;
   else if (name === "profile") screen = <Profile navigate={navigate} />;
   else screen = <Home navigate={navigate} />;
-  return <View style={{ flex: 1, backgroundColor: colors.bg }}>{screen}{!["edit-profile", "booking", "profile-setup", "onboarding", "reset-password", "auth-error", "privacy", "delete-account", "web-auth", "public-deletion", "chat", "web-pages"].includes(name) && <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 16), height: 80, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#FFFFFF80", backgroundColor: "#FFFFFF66", flexDirection: "row", alignItems: "center", paddingHorizontal: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>{tabs.map(item => <Pressable key={item.name} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.name }} onPress={() => navigate({ name: item.name })} style={{ flex: 1, minHeight: 64, alignItems: "center", justifyContent: "center" }}>{item.name === "chat" ? <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "#EF3038", borderWidth: 2, borderColor: "#FFFFFF55", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }}><Text style={{ fontFamily: "Merienda", fontSize: 18, fontWeight: "700", color: "white" }}>AI</Text></View> : <><View style={{ padding: 8, borderRadius: 12, backgroundColor: tab === item.name ? "#00000012" : "transparent" }}><Glyph name={item.icon} color={tab === item.name ? "#171717" : "#4B5563"} size={20} /></View><Text style={{ fontFamily: "Merienda", marginTop: 4, fontSize: 10, color: tab === item.name ? "#171717" : "#4B5563" }}>{item.label}</Text></>}</Pressable>)}</BlurView>}</View>;
+  return <View style={{ flex: 1, backgroundColor: colors.bg }}>{screen}{!["edit-profile", "booking", "profile-setup", "onboarding", "privacy", "delete-account", "public-deletion", "chat", "web-pages"].includes(name) && <BlurView intensity={70} tint="light" experimentalBlurMethod="dimezisBlurView" style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 16), height: 80, borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#FFFFFF80", backgroundColor: "#FFFFFF66", flexDirection: "row", alignItems: "center", paddingHorizontal: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>{tabs.map(item => <Pressable key={item.name} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.name }} onPress={() => navigate({ name: item.name })} style={{ flex: 1, minHeight: 64, alignItems: "center", justifyContent: "center" }}>{item.name === "chat" ? <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "#EF3038", borderWidth: 2, borderColor: "#FFFFFF55", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(239,68,68,0.3)" }}><Text style={{ fontFamily: "Merienda", fontSize: 18, fontWeight: "700", color: "white" }}>AI</Text></View> : <><View style={{ padding: 8, borderRadius: 12, backgroundColor: tab === item.name ? "#00000012" : "transparent" }}><Glyph name={item.icon} color={tab === item.name ? "#171717" : "#4B5563"} size={20} /></View><Text style={{ fontFamily: "Merienda", marginTop: 4, fontSize: 10, color: tab === item.name ? "#171717" : "#4B5563" }}>{item.label}</Text></>}</Pressable>)}</BlurView>}</View>;
 }
+

@@ -3,20 +3,19 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { AppState } from "react-native";
 import { api, type Session } from "./api";
 import * as authApi from "../features/auth/api/auth.api";
-import type { OtpChallenge } from "../features/auth/api/auth.types";
 import { authStorage } from "../features/auth/services/auth-storage.service";
 import { getDeviceInfo } from "../features/auth/services/device.service";
-import * as msg91 from "../features/auth/services/msg91-widget.service";
+import { signInWithProvider } from "../features/auth/services/social-signin.service";
 import { getAccessToken, setAccessToken } from "../lib/api-client";
 import { devAuthBypass, devSession } from "./dev-session";
 
-type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; requestOtp(phoneNumber: string): Promise<OtpChallenge>; resendOtp(phoneNumber: string): Promise<OtpChallenge>; verifyOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
+type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; signIn(provider: "google" | "facebook"): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const challenge = useRef<{ phoneNumber: string; challengeId: string } | null>(null);
+  const signingIn = useRef(false);
   const generation = useRef(0);
   const restore = useCallback(async () => {
     const version = generation.current;
@@ -40,41 +39,27 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const listener = AppState.addEventListener("change", (state) => { if (state === "active") void restore(); });
     return () => { listener.remove(); api.setUnauthorized(() => {}); };
   }, [restore]);
-  async function requestOtp(phoneNumber: string) {
-    challenge.current = null;
-    const result = await msg91.sendOtp(phoneNumber);
-    challenge.current = { phoneNumber, challengeId: result.requestId };
-    if (result.accessToken) await finishLogin(phoneNumber, result.accessToken);
-    return { challengeId: result.requestId, expiresInSeconds: 300, retryAfterSeconds: 30 };
+  async function signIn(provider: "google" | "facebook") {
+    if (signingIn.current) return;
+    signingIn.current = true;
+    try { await finishLogin(provider, await signInWithProvider(provider)); }
+    finally { signingIn.current = false; }
   }
-  async function resendOtp(phoneNumber: string) {
-    const pending = challenge.current;
-    if (!pending || pending.phoneNumber !== phoneNumber) return requestOtp(phoneNumber);
-    pending.challengeId = await msg91.retryOtp(pending.challengeId);
-    return { challengeId: pending.challengeId, expiresInSeconds: 300, retryAfterSeconds: 30 };
-  }
-  async function verifyOtp(phoneNumber: string, code: string) {
-    const pending = challenge.current;
-    if (!pending || pending.phoneNumber !== phoneNumber) throw new Error("Request a new code for this phone number.");
-    await finishLogin(phoneNumber, await msg91.verifyOtp(pending.challengeId, code));
-  }
-  async function finishLogin(phoneNumber: string, widgetAccessToken: string) {
+  async function finishLogin(provider: "google" | "facebook", providerToken: string) {
     const version = generation.current;
-    const result = await authApi.createWidgetSession({ phoneNumber, accessToken: widgetAccessToken, device: await getDeviceInfo() });
+    const result = await authApi.createProviderSession(provider, providerToken, await getDeviceInfo());
     if (version !== generation.current) return;
     await authStorage.setRefreshToken(result.refreshToken);
     if (version !== generation.current) { await authStorage.clearAuthStorage(); return; }
     setAccessToken(result.accessToken);
-    challenge.current = null;
     const value = await authApi.getSession();
     if (version === generation.current) setSession(value as Session);
   }
   async function logout() {
     generation.current++;
-    challenge.current = null;
     try { if (!previewEnabled && !devAuthBypass) await authApi.logout(); }
     finally { await api.clear(); setSession(null); setError(""); }
   }
-  return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, requestOtp, resendOtp, verifyOtp, logout }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ preview: () => { startPreview(); setError(""); setSession(previewSession); }, session, loading, error, restore, signIn, logout }}>{children}</Context.Provider>;
 }
 export function useSession() { const context = useContext(Context); if (!context) throw new Error("SessionProvider missing"); return context; }

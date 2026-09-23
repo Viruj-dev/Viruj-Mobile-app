@@ -2,9 +2,6 @@ import { type Destination } from "./home";
 // Each Next.js page in virujhealthapp/src/app has a native review destination.
 export const webPages: { path: string; destination: Destination }[] = [
   { path: "/", destination: { name: "home" } },
-  { path: "/auth", destination: { name: "web-auth" } },
-  { path: "/auth/error", destination: { name: "auth-error" } },
-  { path: "/auth/reset-password", destination: { name: "reset-password" } },
   { path: "/onboarding", destination: { name: "onboarding" } },
   { path: "/profile-setup", destination: { name: "profile-setup" } },
   { path: "/doctors", destination: { name: "care", kind: "doctors" } },
