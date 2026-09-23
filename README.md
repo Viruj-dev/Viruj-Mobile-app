@@ -9,7 +9,7 @@ See [social sign-in setup](../viruj-backend/docs/mobile-social-auth.md) for prov
 
 Set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env.local` to the backend on port 4000.
 Use `http://10.0.2.2:4000` for Android emulator or your computer's LAN IP for a physical phone.
-Copy `apps/mobile/.env.example` to `.env.local` and set both Google client IDs, the Facebook app ID and client token, and the API URL. Never bundle the Facebook app secret or database credentials. Restart Expo and rebuild the native app after changing provider IDs.
+Copy `apps/mobile/.env.example` to `.env.local` and set the Google Web client ID and API URL. Set the Google iOS client ID before an iOS build. Facebook sign-in is deferred until its Android app is registered with Meta after Play Store publishing; then set the Facebook app ID and client token and `EXPO_PUBLIC_ENABLE_FACEBOOK_SIGN_IN=true`. Never bundle the Facebook app secret or database credentials. Restart Expo and rebuild the native app after changing provider IDs.
 
 Run `bun run dev:api` and `bun run dev:mobile` in separate terminals.
 The native Google and Facebook SDKs require a development or release build; Expo Go cannot run sign-in. Android Google sign-in uses Credential Manager's in-app account sheet. iOS uses Google's native SDK, which can show a system authentication sheet when required.
