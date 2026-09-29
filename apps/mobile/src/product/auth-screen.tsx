@@ -1,45 +1,111 @@
-import { useRef, useState } from "react";
-import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GoogleSignInButton } from "react-native-nitro-google-signin";
 import { AuthIntro } from "./auth-intro";
+import { Button, Field, useBack } from "./ui";
 import { useSession } from "./session";
 
 export function AuthScreen() {
-  const { signIn } = useSession();
+  const { signIn, loginEmail, signupEmail, sendPhoneOtp, verifyPhoneOtp } = useSession();
   const [intro, setIntro] = useState(true);
-  const pending = useRef(false);
-  const [busy, setBusy] = useState<"google" | "facebook" | null>(null);
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [method, setMethod] = useState<"email" | "phone">("email");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function continueWith(provider: "google" | "facebook") {
-    if (pending.current) return;
-    pending.current = true;
-    setBusy(provider);
-    setError("");
-    try { await signIn(provider); }
-    catch (cause) {
-      const message = cause instanceof Error ? cause.message : "";
-      const code = cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "";
-      if (!message.includes("SIGN_IN_CANCELLED") && code !== "SIGN_IN_CANCELLED") setError(code === "account_link_requires_verification" ? "This email is already in use. Please contact support to connect your accounts." : code === "NETWORK_ERROR" || code === "provider_unavailable" ? "Connection lost. Check your internet and try again." : "Sign-in could not be completed. Please try again.");
-    } finally { pending.current = false; setBusy(null); }
+  useBack(!intro && mode === "signup", () => { setMode("login"); setError(""); });
+
+  async function submit() {
+    if (busy) return;
+    if (method === "phone") {
+      if (!/^[6-9]\d{9}$/.test(phone.trim())) { setError("Enter a valid 10-digit Indian mobile number."); return; }
+      if (codeSent && !/^\d{6}$/.test(code.trim())) { setError("Enter the 6-digit code."); return; }
+      setBusy(true); setError("");
+      try {
+        const phoneNumber = `+91${phone.trim()}`;
+        if (codeSent) await verifyPhoneOtp(phoneNumber, code.trim());
+        else { await sendPhoneOtp(phoneNumber); setCodeSent(true); }
+      } catch (cause) { setError(authMessage(cause)); }
+      finally { setBusy(false); }
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Enter a valid email address."); return; }
+    if (mode === "signup" && name.trim().length < 2) { setError("Name must be at least 2 characters."); return; }
+    if (mode === "signup" && password.length < 8) { setError("Use a password with at least 8 characters."); return; }
+    if (mode === "signup" && password !== confirmation) { setError("Passwords do not match."); return; }
+    if (mode === "signup" && !accepted) { setError("Accept the Privacy Policy to continue."); return; }
+    setBusy(true); setError("");
+    try {
+      if (mode === "signup") await signupEmail(name.trim(), email.trim().toLowerCase(), password);
+      else await loginEmail(email.trim().toLowerCase(), password);
+    } catch (cause) { setError(authMessage(cause)); }
+    finally { setBusy(false); }
   }
+
+  async function google() {
+    if (busy) return;
+    setBusy(true); setError("");
+    try { await signIn("google"); }
+    catch (cause) { if ((cause as Error)?.message !== "SIGN_IN_CANCELLED") setError(authMessage(cause)); }
+    finally { setBusy(false); }
+  }
+
   if (intro) return <AuthIntro complete={() => setIntro(false)} />;
-  return <SafeAreaView style={styles.screen}><View style={styles.content}>
-    <View style={styles.brand}><Image source={require("../../assets/auth/virujlogo.png")} style={styles.logo} resizeMode="contain" /><Text style={styles.brandName}>VIRUJ HEALTH</Text></View>
-    <View style={styles.heading}><Text style={styles.title}>Your health, all in one place.</Text><Text style={styles.subtitle}>Sign in or create your account to get started.</Text></View>
-    <View style={styles.actions}>
-      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy !== null} onPress={() => void continueWith("google")} />}</View>
-      {process.env.EXPO_PUBLIC_ENABLE_FACEBOOK_SIGN_IN === "true" && <Pressable accessibilityRole="button" accessibilityLabel="Continue with Facebook" accessibilityState={{ disabled: busy !== null, busy: busy === "facebook" }} disabled={busy !== null} onPress={() => void continueWith("facebook")} style={styles.facebook}>{busy === "facebook" ? <ActivityIndicator color="white" /> : <><Text style={styles.facebookMark}>f</Text><Text style={styles.facebookText}>Continue with Facebook</Text></>}</Pressable>}
-      {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-    </View>
-    <Text style={styles.legal}>By continuing, you agree to our <Text accessibilityRole="link" style={styles.link} onPress={() => void Linking.openURL("https://app.virujhealth.com/privacy-policy")}>Privacy Policy</Text>.</Text>
-  </View></SafeAreaView>;
+  return <SafeAreaView style={styles.screen}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}><View style={styles.content}>
+      <View style={styles.header}><Text accessibilityRole="header" style={styles.title}>{method === "phone" ? "Sign in with phone" : mode === "signup" ? "Create Account" : "Welcome Back"}</Text><Text style={styles.subtitle}>{method === "phone" ? "We'll text you a verification code" : mode === "signup" ? "Join us today" : "Sign in to continue"}</Text></View>
+      <View style={styles.fields}>
+        {method === "phone" ? <>
+          <Field label="Mobile number (+91)" placeholder="9876543210" value={phone} onChangeText={value => { setPhone(value); setCodeSent(false); setCode(""); }} keyboardType="phone-pad" autoComplete="tel" />
+          {codeSent && <Field label="Verification code" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" autoComplete="sms-otp" />}
+        </> : <>
+        {mode === "signup" && <Field label="Full Name" placeholder="John Doe" value={name} onChangeText={setName} autoCapitalize="words" autoComplete="name" />}
+        <Field label="Email" placeholder="you@example.com" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} autoComplete="email" keyboardType="email-address" />
+        <Field label="Password" placeholder="At least 8 characters" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCapitalize="none" autoComplete={mode === "signup" ? "new-password" : "current-password"} />
+        <View style={styles.passwordActions}><Pressable accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"} onPress={() => setShowPassword(value => !value)} style={styles.show}><Text style={styles.link}>{showPassword ? "Hide password" : "Show password"}</Text></Pressable>{mode === "login" && <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://app.virujhealth.com/auth/reset-password")} style={styles.show}><Text style={styles.link}>Forgot password?</Text></Pressable>}</View>
+        {mode === "signup" && <Field label="Confirm Password" placeholder="Repeat password" value={confirmation} onChangeText={setConfirmation} secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="new-password" />}
+        {mode === "signup" && <Pressable accessibilityRole="checkbox" accessibilityLabel="Accept Privacy Policy" accessibilityState={{ checked: accepted }} onPress={() => setAccepted(value => !value)} style={styles.privacy}><View style={[styles.checkbox, accepted && styles.checked]}>{accepted && <Text style={{ color: "white" }}>✓</Text>}</View><Text style={styles.privacyText}>I accept the <Text style={styles.link} onPress={() => void Linking.openURL("https://app.virujhealth.com/privacy-policy")}>Privacy Policy</Text></Text></Pressable>}
+        </>}
+        {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
+        <Button title={method === "phone" ? codeSent ? "Verify and continue" : "Send code" : mode === "signup" ? "Create account" : "Sign in"} busy={busy} onPress={() => void submit()} style={styles.submit} />
+        {method === "phone" && codeSent && <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(""); setError(""); }}><Text style={styles.link}>Resend code</Text></Pressable>}
+      </View>
+      <Pressable accessibilityRole="button" onPress={() => { setMethod(method === "phone" ? "email" : "phone"); setError(""); }} style={styles.switch}><Text style={styles.link}>{method === "phone" ? "Use email instead" : "Sign in with phone"}</Text></Pressable>
+      {method === "email" && <>
+      <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or continue with</Text><View style={styles.line} /></View>
+      <View style={styles.google}>{busy ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy} onPress={() => void google()} />}</View>
+      <View style={styles.switch}><Text style={styles.switchText}>{mode === "signup" ? "Already have an account? " : "Don't have an account? "}</Text><Pressable accessibilityRole="button" onPress={() => { setMode(mode === "signup" ? "login" : "signup"); setError(""); setPassword(""); setConfirmation(""); }}><Text style={styles.link}>{mode === "signup" ? "Sign in" : "Sign up"}</Text></Pressable></View>
+      </>}
+    </View></ScrollView>
+  </KeyboardAvoidingView></SafeAreaView>;
+}
+
+function authMessage(cause: unknown) {
+  const code = cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "";
+  if (code === "email_in_use") return "This email already has an account. Please sign in.";
+  if (code === "invalid_credentials") return "Email or password is incorrect.";
+  if (code === "too_many_attempts") return "Too many attempts. Please try again later.";
+  if (code === "invalid_otp") return "Incorrect or expired code. Please try again.";
+  if (code === "account_link_requires_verification") return "This email is already in use. Please contact support to connect your accounts.";
+  if (code === "provider_unavailable") return "SMS verification is unavailable. Please try again.";
+  if (code === "NETWORK_ERROR") return "Connection lost. Check your internet and try again.";
+  return "Sign-in could not be completed. Please try again.";
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#FFFDFC" }, content: { flex: 1, paddingHorizontal: 28, paddingVertical: 28, justifyContent: "space-between", maxWidth: 480, width: "100%", alignSelf: "center" },
-  brand: { alignItems: "center", marginTop: 28 }, logo: { width: 96, height: 96 }, brandName: { fontFamily: "Merienda", fontSize: 15, color: "#7F1D1D", letterSpacing: 2, fontWeight: "700" },
-  heading: { gap: 14 }, title: { fontFamily: "Merienda", fontSize: 34, lineHeight: 46, fontWeight: "700", color: "#241817", textAlign: "center" }, subtitle: { fontSize: 16, lineHeight: 24, color: "#6B6260", textAlign: "center" },
-  actions: { gap: 14 }, google: { minHeight: 56, justifyContent: "center", alignItems: "center" },
-  facebook: { minHeight: 56, borderRadius: 12, backgroundColor: "#0866FF", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 15 }, facebookMark: { fontSize: 27, fontWeight: "700", color: "white" }, facebookText: { fontSize: 16, fontWeight: "700", color: "white" }, error: { color: "#B42318", textAlign: "center", fontSize: 14 }, legal: { fontSize: 12, color: "#6B6260", textAlign: "center", lineHeight: 19 }, link: { color: "#7F1D1D", textDecorationLine: "underline" },
+  screen: { flex: 1, backgroundColor: "white" }, scroll: { flexGrow: 1, justifyContent: "center", padding: 20 }, content: { width: "100%", maxWidth: 448, alignSelf: "center", paddingVertical: 28 },
+  header: { alignItems: "center", marginBottom: 36 }, title: { fontSize: 36, fontWeight: "700", color: "#111827", textAlign: "center" }, subtitle: { fontSize: 16, color: "#6B7280", marginTop: 8 },
+  fields: { gap: 18 }, passwordActions: { flexDirection: "row", justifyContent: "space-between", marginTop: -14 }, show: { minHeight: 32, justifyContent: "center" }, submit: { backgroundColor: "#7F1D1D", borderRadius: 8, marginTop: 8 },
+  privacy: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 }, checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: "#9CA3AF", alignItems: "center", justifyContent: "center" }, checked: { backgroundColor: "#7F1D1D", borderColor: "#7F1D1D" }, privacyText: { color: "#374151", fontSize: 14, flex: 1 },
+  divider: { flexDirection: "row", alignItems: "center", marginVertical: 28 }, line: { height: 1, backgroundColor: "#E5E7EB", flex: 1 }, dividerText: { marginHorizontal: 12, color: "#9CA3AF", fontSize: 14 }, google: { minHeight: 56, alignItems: "center", justifyContent: "center" },
+  switch: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginTop: 28 }, switchText: { color: "#4B5563", fontSize: 14 }, link: { color: "#7F1D1D", fontSize: 14, fontWeight: "600" }, error: { color: "#B42318", fontSize: 14 },
 });

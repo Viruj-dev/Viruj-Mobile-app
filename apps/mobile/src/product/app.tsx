@@ -27,6 +27,7 @@ export function PatientApp() {
   if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
   if (!session && error) return <Screen title="Connection unavailable"><ErrorText message={error} /><Button title="Try again" onPress={() => void restore()} /><Button title="Sign in with another account" secondary onPress={() => void logout().catch(() => {})} /></Screen>;
   if (!session) return <View style={{ flex: 1 }}><AuthScreen />{__DEV__ && process.env.EXPO_PUBLIC_ENABLE_UI_PREVIEW === "true" && <View style={{ padding: 12, backgroundColor: colors.bg }}><Button title="Sample data preview (offline)" secondary onPress={() => { setReviewPages(false); preview(); }} /><Button title="Review all web app pages" secondary onPress={() => { setReviewPages(true); preview(); }} /></View>}</View>;
+  if (session.user.onboardingCompleted !== true) return <Setup back={() => {}} />;
   return <View style={{ flex: 1 }}>{devAuthBypass && <View style={{ padding: 8, backgroundColor: "#FEF3C7" }}><Body>Development test session · Live backend data</Body></View>}<Workspace key={session.user.id} reviewPages={reviewPages} /></View>;
 }
 function Workspace({ reviewPages }: { reviewPages: boolean }) {
@@ -47,7 +48,7 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   else if (name === "feedback") screen = <Feedback back={back} />;
   else if (name === "delete-account") screen = <DeleteAccount back={back} navigate={navigate} />;
   else if (name === "department-doctors") screen = <Care kind="doctors" department={route!.query} back={back} navigate={navigate} />;
-  else if (name === "profile-setup" || name === "onboarding") screen = <Setup compact={name === "onboarding"} back={back} />;
+  else if (name === "profile-setup" || name === "onboarding") screen = <Setup back={back} />;
   else if (name === "public-deletion") screen = <PublicDeletion back={back} navigate={navigate} />;
   else if (name === "pathlab-placeholder") screen = <Screen title="Pathlab Details" back={back}><Body>Please select a pathlab from the list to view details.</Body></Screen>;
   else if (name === "reports") screen = <Reports back={back} />;

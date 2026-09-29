@@ -14,6 +14,22 @@ export function createProviderSession(provider: "google" | "facebook", token: st
   });
 }
 
+export function emailSignup(name: string, email: string, password: string, device: DeviceInfo) {
+  return apiClient.request<AuthSession>("/api/mobile/auth/email-signup", { method: "POST", body: { name, email, password, acceptPrivacy: true, device } });
+}
+
+export function emailLogin(email: string, password: string, device: DeviceInfo) {
+  return apiClient.request<AuthSession>("/api/mobile/auth/email-login", { method: "POST", body: { email, password, device } });
+}
+
+export function sendPhoneOtp(phoneNumber: string) {
+  return apiClient.request<void>("/api/mobile/auth/phone-otp/send", { method: "POST", body: { phoneNumber } });
+}
+
+export function verifyPhoneOtp(phoneNumber: string, code: string, device: DeviceInfo) {
+  return apiClient.request<AuthSession>("/api/mobile/auth/phone-otp/verify", { method: "POST", body: { phoneNumber, code, device } });
+}
+
 export function refreshToken() {
   return apiClient.refreshSession();
 }
