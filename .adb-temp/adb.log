@@ -1,0 +1,7 @@
+--- adb starting (pid 19292) ---
+09-29 14:18:04.488 19292 29840 I adb     : main.cpp:65 Android Debug Bridge version 1.0.41
+09-29 14:18:04.488 19292 29840 I adb     : main.cpp:65 Version 37.0.1-15733141
+09-29 14:18:04.488 19292 29840 I adb     : main.cpp:65 Installed as C:\Users\MODX\AppData\Local\Android\Sdk\platform-tools\adb.exe
+09-29 14:18:04.488 19292 29840 I adb     : main.cpp:65 Running on Windows 10.0.26200
+09-29 14:18:04.488 19292 29840 I adb     : main.cpp:65 
+09-29 14:20:50.934 19292 29840 W adb     : sockets.cpp:315 timeout expired while flushing socket, closing
