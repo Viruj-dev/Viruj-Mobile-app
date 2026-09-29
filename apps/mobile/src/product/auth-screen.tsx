@@ -95,8 +95,9 @@ function authMessage(cause: unknown) {
   if (code === "invalid_credentials") return "Email or password is incorrect.";
   if (code === "too_many_attempts") return "Too many attempts. Please try again later.";
   if (code === "invalid_otp") return "Incorrect or expired code. Please try again.";
+  if (code === "sms_gateway_not_configured") return "SMS gateway setup is incomplete. Please use email or Google for now.";
   if (code === "account_link_requires_verification") return "This email is already in use. Please contact support to connect your accounts.";
-  if (code === "provider_unavailable") return "SMS verification is unavailable. Please try again.";
+  if (code === "provider_unavailable") return "Sign-in service is unavailable. Please try again.";
   if (code === "NETWORK_ERROR") return "Connection lost. Check your internet and try again.";
   return "Sign-in could not be completed. Please try again.";
 }
