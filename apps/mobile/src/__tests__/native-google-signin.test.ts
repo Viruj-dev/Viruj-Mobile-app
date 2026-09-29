@@ -1,10 +1,11 @@
 import { expect, mock, test } from "bun:test";
 
 const signIn = mock(async () => ({ type: "noSavedCredentialFound", data: null }));
-const createAccount = mock(async () => ({ type: "success", data: { idToken: "google-id-token" } }));
+const createAccount = mock(async () => ({ type: "noSavedCredentialFound", data: null }));
+const presentExplicitSignIn = mock(async () => ({ type: "success", data: { idToken: "google-id-token" } }));
 mock.module("react-native", () => ({ Platform: { OS: "android" } }));
 mock.module("react-native-nitro-google-signin", () => ({
-  GoogleOneTapSignIn: { configure: () => {}, checkPlayServices: async () => {}, signIn, createAccount },
+  GoogleOneTapSignIn: { configure: () => {}, checkPlayServices: async () => {}, signIn, createAccount, presentExplicitSignIn },
   isSuccessResponse: (response: { type: string }) => response.type === "success",
   isNoSavedCredentialFoundResponse: (response: { type: string }) => response.type === "noSavedCredentialFound",
 }));
@@ -15,4 +16,5 @@ test("Google uses the native account chooser when no saved credential exists", a
   expect(await signInWithProvider("google")).toBe("google-id-token");
   expect(signIn).toHaveBeenCalledTimes(1);
   expect(createAccount).toHaveBeenCalledTimes(1);
+  expect(presentExplicitSignIn).toHaveBeenCalledTimes(1);
 });

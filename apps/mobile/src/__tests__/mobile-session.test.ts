@@ -5,6 +5,22 @@ import * as authApi from "../features/auth/api/auth.api";
 import { apiClient } from "../lib/api-client";
 import * as device from "../features/auth/services/device.service";
 
+test("requests work when React Native lacks AbortSignal.timeout", async () => {
+  const original = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
+  Object.defineProperty(AbortSignal, "timeout", { value: undefined, configurable: true });
+  try {
+    const fetcher = mock(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return Response.json({ success: true, data: { ok: true } });
+    });
+    const client = createApiClient({ baseUrl: "https://backend.test", fetcher: fetcher as unknown as typeof fetch });
+    expect(await client.request<{ ok: boolean }>("/api/mobile/auth/provider-session")).toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  } finally {
+    if (original) Object.defineProperty(AbortSignal, "timeout", original);
+  }
+});
+
 test("logout submits the device-bound refresh token to viruj-backend", async () => {
   const token = spyOn(authStorage, "getRefreshToken").mockResolvedValue("refresh-token");
   const installation = spyOn(device, "getOrCreateInstallationId").mockResolvedValue("device-id");

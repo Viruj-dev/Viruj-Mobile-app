@@ -166,14 +166,20 @@ export function createApiClient({
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    const response = await sendRequest(fetcher, `${baseUrl}${path}`, {
-      ...options,
-      headers,
-      credentials: "omit",
-      signal: options.signal ?? AbortSignal.timeout(path.includes("/ai/") ? 90_000 : 20_000),
-      body: options.body === undefined ? undefined : multipart ? options.body as FormData : JSON.stringify(options.body),
-    });
-    const payload = options.binary && response.ok ? await response.arrayBuffer() : await parseResponse(response);
+    const controller = options.signal ? null : new AbortController();
+    const timer = controller && setTimeout(() => controller.abort(), path.includes("/ai/") ? 90_000 : 20_000);
+    let response: Response;
+    let payload: unknown;
+    try {
+      response = await sendRequest(fetcher, `${baseUrl}${path}`, {
+        ...options,
+        headers,
+        credentials: "omit",
+        signal: options.signal ?? controller?.signal,
+        body: options.body === undefined ? undefined : multipart ? options.body as FormData : JSON.stringify(options.body),
+      });
+      payload = options.binary && response.ok ? await response.arrayBuffer() : await parseResponse(response);
+    } finally { if (timer) clearTimeout(timer); }
     if (options.auth && generation !== sessionGeneration) throw createAuthApiError({ code: "AUTH_UNAUTHORIZED", status: 401 });
 
     if (response.status === 401 && options.auth && options.retry !== false) {

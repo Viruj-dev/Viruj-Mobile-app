@@ -11,6 +11,7 @@ export async function signInWithProvider(provider: "google" | "facebook"): Promi
     await GoogleOneTapSignIn.checkPlayServices();
     let response = await GoogleOneTapSignIn.signIn();
     if (isNoSavedCredentialFoundResponse(response)) response = await GoogleOneTapSignIn.createAccount();
+    if (isNoSavedCredentialFoundResponse(response)) response = await GoogleOneTapSignIn.presentExplicitSignIn();
     if (!isSuccessResponse(response)) throw new Error("SIGN_IN_CANCELLED");
     if (!response.data.idToken) throw new Error("Google did not return a sign-in token.");
     return response.data.idToken;
