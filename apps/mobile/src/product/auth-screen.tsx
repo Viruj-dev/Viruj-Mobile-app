@@ -2,10 +2,12 @@ import { useRef, useState } from "react";
 import { ActivityIndicator, Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GoogleSignInButton } from "react-native-nitro-google-signin";
+import { AuthIntro } from "./auth-intro";
 import { useSession } from "./session";
 
 export function AuthScreen() {
   const { signIn } = useSession();
+  const [intro, setIntro] = useState(true);
   const pending = useRef(false);
   const [busy, setBusy] = useState<"google" | "facebook" | null>(null);
   const [error, setError] = useState("");
@@ -21,6 +23,7 @@ export function AuthScreen() {
       if (!message.includes("SIGN_IN_CANCELLED") && code !== "SIGN_IN_CANCELLED") setError(code === "account_link_requires_verification" ? "This email is already in use. Please contact support to connect your accounts." : code === "NETWORK_ERROR" || code === "provider_unavailable" ? "Connection lost. Check your internet and try again." : "Sign-in could not be completed. Please try again.");
     } finally { pending.current = false; setBusy(null); }
   }
+  if (intro) return <AuthIntro complete={() => setIntro(false)} />;
   return <SafeAreaView style={styles.screen}><View style={styles.content}>
     <View style={styles.brand}><Image source={require("../../assets/auth/virujlogo.png")} style={styles.logo} resizeMode="contain" /><Text style={styles.brandName}>VIRUJ HEALTH</Text></View>
     <View style={styles.heading}><Text style={styles.title}>Your health, all in one place.</Text><Text style={styles.subtitle}>Sign in or create your account to get started.</Text></View>
