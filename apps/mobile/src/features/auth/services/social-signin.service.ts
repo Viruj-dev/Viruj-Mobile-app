@@ -3,7 +3,8 @@ import { Platform } from "react-native";
 export async function signInWithProvider(provider: "google" | "facebook"): Promise<string> {
   if (Platform.OS === "web") throw new Error("Use the Android or iOS app to sign in.");
   if (provider === "google") {
-    const { GoogleOneTapSignIn, isSuccessResponse, isNoSavedCredentialFoundResponse } = await import("react-native-nitro-google-signin");
+    // Match the native button's require entry so its view is registered only once.
+    const { GoogleOneTapSignIn, isSuccessResponse, isNoSavedCredentialFoundResponse } = require("react-native-nitro-google-signin") as typeof import("react-native-nitro-google-signin");
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
     if (!webClientId) throw new Error("Google sign-in is not configured.");
     if (Platform.OS === "ios" && !process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID) throw new Error("Google sign-in is not configured for iOS.");
@@ -27,7 +28,7 @@ export async function signInWithProvider(provider: "google" | "facebook"): Promi
 
 export async function signOutFromProviders() {
   if (Platform.OS === "web") return;
-  const { GoogleOneTapSignIn } = await import("react-native-nitro-google-signin");
+  const { GoogleOneTapSignIn } = require("react-native-nitro-google-signin") as typeof import("react-native-nitro-google-signin");
   await GoogleOneTapSignIn.signOut().catch(() => {});
   if (process.env.EXPO_PUBLIC_ENABLE_FACEBOOK_SIGN_IN === "true") {
     const { LoginManager } = await import("react-native-fbsdk-next");
