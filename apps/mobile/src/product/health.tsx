@@ -26,7 +26,7 @@ function AppointmentCard({ item, active, navigate, notice, reload }: { item: App
   return <Card style={{ padding: 16, borderRadius: 12, borderWidth: active ? 2 : 1, borderColor: active ? "#7F1D1D" : "#FEE2E2", overflow: "hidden" }}><View style={{ height: 4, backgroundColor: "#991B1B", margin: -16, marginBottom: 0 }} /><View style={{ flexDirection: "row", gap: 12 }}><View style={{ backgroundColor: "#FEF2F2", padding: 10, borderRadius: 16 }}><Glyph name="business-outline" size={24} /></View><View style={{ flex: 1 }}><Heading style={{ fontSize: 16 }}>{item.hospitalName || "Viruj Health Partner"}</Heading><Body style={{ fontSize: 12 }}>{item.hospitalAddress || "Location not specified"}</Body></View><View style={{ alignItems: "flex-end" }}><Body style={{ backgroundColor: active ? item.status === "approved" ? "#22C55E" : "#FBBF24" : "#DCFCE7", color: active ? "white" : "#166534", paddingHorizontal: 8, borderRadius: 12, fontSize: 11 }}>{status}</Body><Body style={{ fontSize: 12 }}>{item.appointmentMode === "video" ? "Video" : "In-person"}</Body></View></View><View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}><View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center" }}><Body>{item.doctorName.split(" ").map(n => n[0]).join("")}</Body></View><View style={{ flex: 1 }}><Heading style={{ fontSize: 16 }}>{item.doctorName}</Heading><Body style={{ fontSize: 12 }}>{item.doctorSpecialty || item.departmentName || "Specialist"}</Body></View><View><Body style={{ fontSize: 12 }}>{new Date(item.appointmentDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</Body><Body style={{ fontSize: 12 }}>{item.appointmentTime}</Body></View></View><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Button title={item.status === "cancelled" ? "Book Again" : active ? "Live Status" : "Rebook"} onPress={() => active ? void refresh() : navigate(item.doctorId ? { name: "booking", id: String(item.doctorId) } : { name: "care", kind: "doctors" })} style={{ flex: 1, borderRadius: 8, minHeight: 40 }} textStyle={{ fontSize: 12 }} />{item.status !== "cancelled" && <Button title={active ? "Cancel" : "Prescription"} onPress={() => active ? void cancel() : notice("Prescription download is not connected yet.")} style={{ flex: 1, borderRadius: 8, minHeight: 40 }} textStyle={{ fontSize: 12 }} />}</View></Card>;
 }
 function Section({ title, subtitle }: { title: string; subtitle: string }) { return <View style={{ gap: 8, marginBottom: 16 }}><Heading style={{ fontSize: 24, fontWeight: "700" }}>{title}</Heading><Body style={{ fontSize: 12, color: "#9CA3AF" }}>{subtitle}</Body></View>; }
-export function Booking({ doctorId, back, complete }: { doctorId: string; back(): void; complete(): void }) {
+export function Booking({ doctorId, providerId, back, complete }: { doctorId: string; providerId?: string; back(): void; complete(): void }) {
   const { session } = useSession();
   const profile = useResource<Profile>(`/users/${session!.user.id}`);
   const doctor = useResource<{ data: CareItem }>(`/doctors/${doctorId}`);
@@ -35,10 +35,14 @@ export function Booking({ doctorId, back, complete }: { doctorId: string; back()
   const [date, setDate] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(false), [error, setError] = useState("");
   const [name, setName] = useState(""), [phone, setPhone] = useState(""), [reason, setReason] = useState("");
   const [requestId] = useState(() => Crypto.randomUUID());
-  const practices = doctor.data?.data.practices || [];
+  const practices = (doctor.data?.data.practices || []).filter(p => !providerId || String(p.hospitalId) === providerId);
   const practice = practices.find(p => p.id === practiceId);
   const slot = slots.find(s => s.id === slotId);
   useEffect(() => { if (profile.data) { setName(profile.data.name); setPhone(profile.data.phoneNumber || ""); } }, [profile.data]);
+  useEffect(() => {
+    const available = (doctor.data?.data.practices || []).filter(p => (!providerId || String(p.hospitalId) === providerId) && p.bookingEnabled);
+    setPracticeId(current => available.some(p => p.id === current) ? current : available.length === 1 ? available[0]!.id : "");
+  }, [doctor.data, providerId]);
   useEffect(() => {
     setSlotId(""); setSlots([]); setError(""); if (!practiceId) return;
     const controller = new AbortController(); setLoading(true);
@@ -66,7 +70,7 @@ export function Booking({ doctorId, back, complete }: { doctorId: string; back()
       <Section title="Patient Details" subtitle="Contact information for your appointment" />
       <Field label="Full name" value={name} onChangeText={setName} /><Field label="Phone number" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
       <Field label="Reason for visit" multiline value={reason} onChangeText={setReason} />
-      <Section title="Practice Location" subtitle="Choose where you want to see this doctor" />
+      <Section title="Practice Location" subtitle={providerId ? "Book within your selected provider" : "Choose where you want to see this doctor"} />
       {practices.map(p => <Pressable key={p.id} accessibilityRole="radio" accessibilityState={{ checked: practiceId === p.id, disabled: !p.bookingEnabled }} disabled={!p.bookingEnabled} onPress={() => setPracticeId(p.id)}><Card style={{ borderColor: practiceId === p.id ? "#7F1D1D" : "#E5E7EB", borderWidth: practiceId === p.id ? 2 : 1 }}><Heading>{p.name}</Heading><Body>{p.address}</Body>{!p.bookingEnabled && <Body>Online booking is unavailable.</Body>}</Card></Pressable>)}
       {!doctor.loading && !practices.length && <Empty title="Online booking is unavailable" detail="This directory provider has no connected booking practice. Contact the provider directly." />}
       <Button title="Choose Schedule" disabled={!practice?.bookingEnabled || !name.trim() || !/^\+?[\d -]{7,20}$/.test(phone)} onPress={() => setStep(2)} />

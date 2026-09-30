@@ -40,9 +40,9 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   let screen;
   if (__DEV__ && name === "web-pages") screen = <Screen title="Web app page review"><Body>All 25 source routes. Sample data only.</Body>{webPages.map(p => <Button key={p.path} title={p.path} secondary onPress={() => setStack(value => [...value, p.destination])} />)}</Screen>;
   else if (name === "care") screen = <Care key={`${route!.kind}/${route!.query || ""}`} kind={route!.kind!} department={route!.query} departmentPage={Boolean(route!.query)} navigate={navigate} back={back} />;
-  else if (name === "detail") screen = <CareDetail key={`${route!.kind}/${route!.id}`} kind={route!.kind!} id={route!.id!} navigate={navigate} back={back} />;
+  else if (name === "detail") screen = <CareDetail key={`${route!.kind}/${route!.id}/${route!.providerId}`} kind={route!.kind!} id={route!.id!} providerId={route!.providerId} navigate={navigate} back={back} />;
   else if (name === "hospital-doctors") screen = <Care kind="doctors" hospitalId={route!.id!} back={back} navigate={navigate} />;
-  else if (name === "booking") screen = <Booking doctorId={route!.id!} back={back} complete={() => navigate({ name: "health" })} />;
+  else if (name === "booking") screen = <Booking key={`${route!.id}/${route!.providerId}`} doctorId={route!.id!} providerId={route!.providerId} back={back} complete={() => navigate({ name: "health" })} />;
   else if (name === "notifications") screen = <Inbox back={back} navigate={navigate} />;
   else if (name === "edit-profile") screen = <EditProfile back={back} />;
   else if (name === "feedback") screen = <Feedback back={back} />;

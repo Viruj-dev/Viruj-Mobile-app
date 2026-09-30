@@ -326,7 +326,7 @@ function Directory({
             key={item.id}
             item={item}
             kind={kind}
-            navigate={navigate}
+            navigate={destination => navigate({ ...destination, providerId: hospitalId })}
             variant={
               department
                 ? departmentPage
@@ -418,6 +418,7 @@ export function DetailLine({
 export function CareDetail(props: {
   kind: string;
   id: string;
+  providerId?: string;
   navigate: Navigate;
   back(): void;
 }) {
@@ -430,11 +431,13 @@ export function CareDetail(props: {
 function ProviderDetail({
   kind,
   id,
+  providerId,
   navigate,
   back,
 }: {
   kind: string;
   id: string;
+  providerId?: string;
   navigate: Navigate;
   back(): void;
 }) {
@@ -573,7 +576,7 @@ function ProviderDetail({
                 <Button
                   title="Book Your Appointment"
                   disabled={item.bookingAvailable === false}
-                  onPress={() => navigate({ name: "booking", id })}
+                  onPress={() => navigate({ name: "booking", id, providerId })}
                 />
                 {item.bookingAvailable === false && (
                   <Body>
@@ -629,7 +632,7 @@ function ProviderDetail({
           ))}
           {!doctor && <HospitalDepartments id={id} navigate={navigate} />}
           <RelatedDoctors
-            hospitalId={doctor ? String(item.hospital_id || "") : id}
+            hospitalId={doctor ? providerId || String(item.hospital_id || "") : id}
             exclude={doctor ? id : undefined}
             navigate={navigate}
           />
@@ -685,7 +688,7 @@ function RelatedDoctors({
           accessibilityLabel={`View ${d.name}`}
           key={d.id}
           onPress={() =>
-            navigate({ name: "detail", kind: "doctors", id: String(d.id) })
+            navigate({ name: "detail", kind: "doctors", id: String(d.id), providerId: hospitalId })
           }
         >
           <Card style={{ borderRadius: 8, padding: 12, gap: 4 }}>
