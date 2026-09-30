@@ -184,7 +184,7 @@ export function ProviderCard({
                     textTransform: "uppercase",
                   }}
                 >
-                  ● {item.departments || "Multi-speciality hospital"}
+                  ● {Array.isArray(item.departments) ? item.departments.map(d => d.name).join(" · ") || "Multi-speciality hospital" : item.departments || "Multi-speciality hospital"}
                 </Body>
               </>
             )}
