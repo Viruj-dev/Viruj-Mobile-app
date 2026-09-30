@@ -20,7 +20,7 @@ export function AuthScreen() {
   const [confirmation, setConfirmation] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"submit" | "google" | null>(null);
   const [error, setError] = useState("");
   useBack(!intro && mode === "signup", () => { setMode("login"); setError(""); });
 
@@ -29,13 +29,13 @@ export function AuthScreen() {
     if (method === "phone") {
       if (!/^[6-9]\d{9}$/.test(phone.trim())) { setError("Enter a valid 10-digit Indian mobile number."); return; }
       if (codeSent && !/^\d{6}$/.test(code.trim())) { setError("Enter the 6-digit code."); return; }
-      setBusy(true); setError("");
+      setBusy("submit"); setError("");
       try {
         const phoneNumber = `+91${phone.trim()}`;
         if (codeSent) await verifyPhoneOtp(phoneNumber, code.trim());
         else { await sendPhoneOtp(phoneNumber); setCodeSent(true); }
       } catch (cause) { setError(authMessage(cause)); }
-      finally { setBusy(false); }
+      finally { setBusy(null); }
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Enter a valid email address."); return; }
@@ -43,20 +43,20 @@ export function AuthScreen() {
     if (mode === "signup" && password.length < 8) { setError("Use a password with at least 8 characters."); return; }
     if (mode === "signup" && password !== confirmation) { setError("Passwords do not match."); return; }
     if (mode === "signup" && !accepted) { setError("Accept the Privacy Policy to continue."); return; }
-    setBusy(true); setError("");
+    setBusy("submit"); setError("");
     try {
       if (mode === "signup") await signupEmail(name.trim(), email.trim().toLowerCase(), password);
       else await loginEmail(email.trim().toLowerCase(), password);
     } catch (cause) { setError(authMessage(cause)); }
-    finally { setBusy(false); }
+    finally { setBusy(null); }
   }
 
   async function google() {
     if (busy) return;
-    setBusy(true); setError("");
+    setBusy("google"); setError("");
     try { await signIn("google"); }
     catch (cause) { if ((cause as Error)?.message !== "SIGN_IN_CANCELLED") setError(authMessage(cause)); }
-    finally { setBusy(false); }
+    finally { setBusy(null); }
   }
 
   if (intro) return <AuthIntro complete={() => setIntro(false)} />;
@@ -76,13 +76,13 @@ export function AuthScreen() {
         {mode === "signup" && <Pressable accessibilityRole="checkbox" accessibilityLabel="Accept Privacy Policy" accessibilityState={{ checked: accepted }} onPress={() => setAccepted(value => !value)} style={styles.privacy}><View style={[styles.checkbox, accepted && styles.checked]}>{accepted && <Text style={{ color: "white" }}>✓</Text>}</View><Text style={styles.privacyText}>I accept the <Text style={styles.link} onPress={() => void Linking.openURL("https://app.virujhealth.com/privacy-policy")}>Privacy Policy</Text></Text></Pressable>}
         </>}
         {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-        <Button title={method === "phone" ? codeSent ? "Verify and continue" : "Send code" : mode === "signup" ? "Create account" : "Sign in"} busy={busy} onPress={() => void submit()} style={styles.submit} />
+        <Button title={method === "phone" ? codeSent ? "Verify and continue" : "Send code" : mode === "signup" ? "Create account" : "Sign in"} busy={busy === "submit"} disabled={busy === "google"} onPress={() => void submit()} style={styles.submit} />
         {method === "phone" && codeSent && <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(""); setError(""); }}><Text style={styles.link}>Resend code</Text></Pressable>}
       </View>
       <Pressable accessibilityRole="button" onPress={() => { setMethod(method === "phone" ? "email" : "phone"); setError(""); }} style={styles.switch}><Text style={styles.link}>{method === "phone" ? "Use email instead" : "Sign in with phone"}</Text></Pressable>
       {method === "email" && <>
       <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or continue with</Text><View style={styles.line} /></View>
-      <View style={styles.google}>{busy ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy} onPress={() => void google()} />}</View>
+      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy !== null} onPress={() => void google()} />}</View>
       <View style={styles.switch}><Text style={styles.switchText}>{mode === "signup" ? "Already have an account? " : "Don't have an account? "}</Text><Pressable accessibilityRole="button" onPress={() => { setMode(mode === "signup" ? "login" : "signup"); setError(""); setPassword(""); setConfirmation(""); }}><Text style={styles.link}>{mode === "signup" ? "Sign in" : "Sign up"}</Text></Pressable></View>
       </>}
     </View></ScrollView>
