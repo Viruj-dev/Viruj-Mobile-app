@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { GoogleSignInButton } from "react-native-nitro-google-signin";
 import { AuthIntro } from "./auth-intro";
 import { Button, Field, useBack } from "./ui";
 import { useSession } from "./session";
+
+// The native Google button imports the React Native bridge, which is unavailable on web.
+const GoogleSignInButton = Platform.OS === "web" ? null : require("react-native-nitro-google-signin").GoogleSignInButton as typeof import("react-native-nitro-google-signin").GoogleSignInButton;
 
 export function AuthScreen() {
   const { signIn, loginEmail, signupEmail, sendPhoneOtp, verifyPhoneOtp } = useSession();
@@ -82,7 +84,7 @@ export function AuthScreen() {
       <Pressable accessibilityRole="button" onPress={() => { setMethod(method === "phone" ? "email" : "phone"); setError(""); }} style={styles.switch}><Text style={styles.link}>{method === "phone" ? "Use email instead" : "Sign in with phone"}</Text></Pressable>
       {method === "email" && <>
       <View style={styles.divider}><View style={styles.line} /><Text style={styles.dividerText}>or continue with</Text><View style={styles.line} /></View>
-      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy !== null} onPress={() => void google()} />}</View>
+      <View style={styles.google}>{busy === "google" ? <ActivityIndicator color="#202124" /> : GoogleSignInButton ? <GoogleSignInButton accessibilityLabel="Continue with Google" colorScheme="light" size="wide" signInBehavior="none" disabled={busy !== null} onPress={() => void google()} /> : <Text style={styles.subtitle}>Google sign-in is available in the Android and iOS apps.</Text>}</View>
       <View style={styles.switch}><Text style={styles.switchText}>{mode === "signup" ? "Already have an account? " : "Don't have an account? "}</Text><Pressable accessibilityRole="button" onPress={() => { setMode(mode === "signup" ? "login" : "signup"); setError(""); setPassword(""); setConfirmation(""); }}><Text style={styles.link}>{mode === "signup" ? "Sign in" : "Sign up"}</Text></Pressable></View>
       </>}
     </View></ScrollView>
