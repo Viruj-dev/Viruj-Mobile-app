@@ -11,6 +11,7 @@ const doctors: CareItem[] = [
   { id: 3, name: "Dr. Kavya Suri", specialty: "Women & Child Health", qualifications: "MBBS, DGO", experience: "10 years", consultationFees: 800, consultation_fees: 800, hospital_id: 2, hospitalName: "Demo Family Hospital", hospital_name: "Demo Family Hospital", city: "Delhi", rating: 4.9 },
 ];
 const hospitals: CareItem[] = [{ id: 1, name: "Demo Care Centre", city: "Noida", address: "Sector 62, Noida", description: "A sample multispecialty hospital. Explore departments and choose a specialist.", rating: 4.8, availability: "Open 24 hours" }, { id: 2, name: "Demo Family Hospital", city: "Delhi", address: "New Delhi", description: "Sample family healthcare facility.", rating: 4.7 }];
+for (const doctor of doctors) doctor.practices = [{ id: `preview-practice-${doctor.hospital_id}`, tenantId: `preview-tenant-${doctor.hospital_id}`, clinicId: `preview-clinic-${doctor.hospital_id}`, hospitalId: Number(doctor.hospital_id), name: doctor.hospitalName!, bookingEnabled: true, modes: ["in-person"] }];
 const labs: CareItem[] = [{ id: 1, name: "Demo Diagnostics", city: "Noida", area: "Sector 62", address: "Sector 62, Noida", startingPrice: 299, rating: 4.8, description: "Sample lab profile for browsing tests and packages." }];
 export const departmentNames = ["Surgery", "Cardiac Sciences", "Neurosciences", "Orthopaedics", "Internal Medicine", "Women & Child Health", "Oncology", "Diagnostics & Imaging", "Urology & Nephrology", "ENT", "Dermatology", "Psychiatry", "Dental Sciences", "Emergency & Critical Care"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -40,11 +41,27 @@ export async function previewRequest(path: string, options: { method?: string; b
   if (p === "/search") { const q = (url.searchParams.get("q") || "").toLowerCase(); return { results: [...doctors.map(d => ({ ...d, type: "doctor" })), ...hospitals.map(h => ({ ...h, type: "hospital" })), ...departmentNames.map(name => ({ id: slug(name), name, type: "department" }))].filter(i => i.name.toLowerCase().includes(q)) }; }
   if (/^\/hospitals\/[^/]+\/doctors$/.test(p)) return { data: doctors.filter(d => String(d.hospital_id) === p.split("/")[2]) };
   if (/^\/departments\/[^/]+\/doctors$/.test(p)) return { data: doctors.filter(d => slug(d.specialty || "") === p.split("/")[2]) };
+  if (/^\/doctors\/[^/]+\/practices\/[^/]+\/slots$/.test(p)) return { data: [] };
   for (const [kind, data] of [["doctors", doctors], ["hospitals", hospitals], ["pathlabs", labs]] as const) {
     if (p === `/${kind}`) { const q = (url.searchParams.get("search") || "").toLowerCase(); return { data: data.filter(d => `${d.name} ${d.specialty || ""} ${d.city}`.toLowerCase().includes(q)), pagination: { totalPages: 1 } }; }
     if (p.startsWith(`/${kind}/`)) return { data: data.find(d => String(d.id) === p.split("/")[2]) || null };
   }
-  if (p === "/appointments") { if (method === "POST" && !appointments.some(a => a.id === body.requestId)) { const doctor = doctors.find(d => d.id === body.doctorId)!; appointments.unshift({ id: body.requestId, doctorId: body.doctorId, doctorName: doctor.name, hospitalName: doctor.hospitalName!, appointmentDate: body.selectedDate, appointmentTime: body.selectedTimeSlot, appointmentMode: body.appointmentType, status: "pending_approval", reason: body.additionalComments }); } return { appointments: [...appointments] }; }
+  if (p === "/appointments") {
+    if (method === "POST" && !appointments.some(a => a.id === body.requestId)) {
+      const doctor = doctors.find(d => d.id === body.doctorId)!;
+      const practice = doctor.practices?.find(p => p.id === body.practiceId);
+      if (body.startsAt && !practice) throw new Error("Select a valid practice for this doctor.");
+      appointments.unshift({ id: body.requestId, source: "erp", version: 0, practiceId: body.practiceId, patientName: body.fullName, doctorId: body.doctorId, doctorName: doctor.name, hospitalName: practice?.name || doctor.hospitalName!, appointmentDate: body.startsAt || body.selectedDate, appointmentTime: body.startsAt ? new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" }).format(new Date(body.startsAt)) : body.selectedTimeSlot, appointmentMode: body.appointmentType, status: "pending_approval", reason: body.additionalComments, bookingDetails: { fullName: body.fullName, phoneNumber: body.phoneNumber, age: body.age, gender: body.gender, height: body.height, weight: body.weight, complaintPhoto: body.complaintPhoto } });
+    }
+    return { appointments: appointments.map(({ bookingDetails, ...item }) => item), appointment: { ...appointments.find(a => a.id === body.requestId) } };
+  }
+  const appointmentMatch = /^\/appointments\/([^/]+)(\/cancel)?$/.exec(p);
+  if (appointmentMatch) {
+    const appointment = appointments.find(a => a.id === appointmentMatch[1]);
+    if (!appointment) throw new Error("Appointment not found.");
+    if (appointmentMatch[2] && method === "POST") { if (appointment.version !== body.expectedVersion) throw new Error("Appointment changed. Refresh and try again."); appointment.status = "cancelled"; appointment.version = (appointment.version || 0) + 1; }
+    return { appointment: { ...appointment } };
+  }
   if (p === "/notifications") { if (method === "DELETE") notifications = notifications.filter(n => n.id !== body.id); if (method === "PATCH") notifications = notifications.map(n => body.all || n.id === body.id ? { ...n, isRead: true } : n); return { data: [...notifications] }; }
   if (p === "/reports") return { data: [{ id: "sample-report", disease: "Sample conversation summary", summary: "This is a preview of an AI-generated report. No medical assessment has been performed.", symptoms: "Not assessed in preview", precautions: "Discuss health concerns with your clinician.", createdAt: today }] };
   if (p === "/community/feed") return { data: posts.map(p => ({ ...p, isLiked: liked.has(p.id), isBookmarked: bookmarked.has(p.id) })) };

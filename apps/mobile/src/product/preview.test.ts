@@ -40,6 +40,28 @@ import { Glob } from "bun";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { webPages } from "./web-pages";
+import type { Appointment } from "./api";
+test("requested physical booking preview keeps practice, assessment and retry identity", async () => {
+  startPreview();
+  try {
+    const request = { requestId: "requested-time", doctorId: 1, practiceId: "preview-practice-1", startsAt: "2099-01-01T18:00:00+05:30", endsAt: "2099-01-01T13:00:00Z", appointmentType: "in-person", fullName: "Asha", age: 30, gender: "female", height: 165, weight: 60, complaintPhoto: "data:image/png;base64,AQID" };
+    await api.request("/appointments", { method: "POST", body: request });
+    await api.request("/appointments", { method: "POST", body: request });
+    const list = await api.request<{ appointments: Appointment[] }>("/appointments");
+    expect(list.appointments.filter(a => a.id === request.requestId)).toHaveLength(1);
+    expect(list.appointments.find(a => a.id === request.requestId)?.bookingDetails).toBeUndefined();
+    const { appointment } = await api.request<{ appointment: Appointment }>(`/appointments/${request.requestId}`);
+    expect(appointment.status).toBe("pending_approval");
+    expect(appointment.practiceId).toBe("preview-practice-1");
+    expect(appointment.bookingDetails?.age).toBe(30);
+    expect(appointment.bookingDetails?.complaintPhoto).toBe(request.complaintPhoto);
+    await expect(api.request("/appointments", { method: "POST", body: { ...request, requestId: "wrong-practice", practiceId: "preview-practice-2" } })).rejects.toThrow("valid practice");
+    await api.request(`/appointments/${request.requestId}/cancel`, { method: "POST", body: { expectedVersion: 0 } });
+    expect((await api.request<{ appointment: Appointment }>(`/appointments/${request.requestId}`)).appointment.status).toBe("cancelled");
+    await expect(api.request(`/appointments/${request.requestId}/cancel`, { method: "POST", body: { expectedVersion: 0 } })).rejects.toThrow("changed");
+    expect((await api.request<{ appointment: Appointment }>("/appointments/preview-past")).appointment.status).toBe("completed");
+  } finally { stopPreview(); }
+});
 const webApp = resolve(import.meta.dir, "../../../../../virujhealthapp/src/app");
 (existsSync(webApp) ? test : test.skip)("every source web page has a mobile review destination", () => {
   const source = [...new Glob("**/page.tsx").scanSync({ cwd: webApp })].map(path => "/" + path.replaceAll("\\", "/").replace(/(^|\/)page\.tsx$/, "")).filter(path => !path.startsWith("/auth"));
