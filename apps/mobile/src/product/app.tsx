@@ -11,7 +11,7 @@ import { AuthScreen } from "./auth-screen";
 import { Care, CareDetail } from "./care";
 import { Chat } from "./chat";
 import { Community } from "./community";
-import { Booking, Health } from "./health";
+import { AppointmentDetails, Booking, Health } from "./health";
 import { Home, type Destination } from "./home";
 import { Inbox } from "./inbox";
 import { DeleteAccount, EditProfile, Feedback, Profile } from "./profile";
@@ -42,7 +42,8 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   else if (name === "care") screen = <Care key={`${route!.kind}/${route!.query || ""}`} kind={route!.kind!} department={route!.query} departmentPage={Boolean(route!.query)} navigate={navigate} back={back} />;
   else if (name === "detail") screen = <CareDetail key={`${route!.kind}/${route!.id}/${route!.providerId}`} kind={route!.kind!} id={route!.id!} providerId={route!.providerId} navigate={navigate} back={back} />;
   else if (name === "hospital-doctors") screen = <Care kind="doctors" hospitalId={route!.id!} back={back} navigate={navigate} />;
-  else if (name === "booking") screen = <Booking key={`${route!.id}/${route!.providerId}`} doctorId={route!.id!} providerId={route!.providerId} back={back} complete={() => navigate({ name: "health" })} />;
+  else if (name === "booking") screen = <Booking key={`${route!.id}/${route!.providerId}/${route!.practiceId}`} doctorId={route!.id!} providerId={route!.providerId} initialPracticeId={route!.practiceId} back={back} complete={() => navigate({ name: "health" })} />;
+  else if (name === "appointment") screen = <AppointmentDetails key={route!.id} id={route!.id!} back={back} />;
   else if (name === "notifications") screen = <Inbox back={back} navigate={navigate} />;
   else if (name === "edit-profile") screen = <EditProfile back={back} />;
   else if (name === "feedback") screen = <Feedback back={back} />;

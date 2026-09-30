@@ -6,7 +6,7 @@ import { SearchResults } from "./care";
 import { useSession } from "./session";
 import { Glyph, ResourceState, useResource } from "./ui";
 
-export type Destination = { name: string; id?: string; kind?: string; query?: string; providerId?: string };
+export type Destination = { name: string; id?: string; kind?: string; query?: string; providerId?: string; practiceId?: string };
 export type Navigate = (destination: Destination) => void;
 function Text(props: TextProps) { return <NativeText {...props} style={[{ fontFamily: "Merienda" }, props.style]} />; }
 const concerns = [

@@ -1,93 +1,85 @@
 // Native layout from my-health/page.tsx and booking-page/page.tsx.
-import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
-import { api, type Appointment, type CareItem, type Profile } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { AppState, Image, Pressable, View } from "react-native";
+import { api, ApiError, type Appointment } from "./api";
 import { type Navigate } from "./home";
-import { useSession } from "./session";
-import { previewEnabled } from "./preview";
-import { pickImage, pickMedia } from "./media";
-import * as Crypto from "expo-crypto";
-import { Range, SelectField } from "./web-controls";
-import { Body, Button, Card, Empty, ErrorText, Field, Glyph, Heading, ResourceState, Screen, useResource, useBack } from "./ui";
+import { pickImage } from "./media";
+import { appointmentDay, upcomingAppointment } from "./booking-validation";
+export { Booking } from "./booking";
+import { Body, Button, Card, Empty, ErrorText, Glyph, Heading, ResourceState, Screen, useResource } from "./ui";
 export function Health({ navigate }: { navigate: Navigate }) {
   const result = useResource<{ appointments: Appointment[] }>("/appointments"); const [notice, setNotice] = useState(""); const [record, setRecord] = useState<string>();
-  useEffect(() => { const timer = setInterval(() => result.reload(), 30000); return () => clearInterval(timer); }, []);
-  const active = (result.data?.appointments || []).filter(a => ["approved", "pending_approval", "rescheduled"].includes(a.status)); const past = (result.data?.appointments || []).filter(a => !["approved", "pending_approval", "rescheduled"].includes(a.status));
+  useAppointmentRefresh(result.reload);
+  const active = (result.data?.appointments || []).filter(upcomingAppointment); const past = (result.data?.appointments || []).filter(a => !upcomingAppointment(a));
   async function upload() { try { const image = await pickImage(); if (image) { setRecord(image.dataUrl); setNotice("Record selected. Upload storage is not connected yet."); } } catch (e) { setNotice(e instanceof Error ? e.message : "Could not select record."); } }
-  return <Screen title="My Health" back={() => navigate({ name: "home" })} floating={<Pressable accessibilityRole="button" accessibilityLabel="Upload medical record" onPress={() => void upload()} style={{ position: "absolute", bottom: 96, right: 16, width: 56, height: 56, borderRadius: 28, backgroundColor: "#7F1D1D", alignItems: "center", justifyContent: "center" }}><Glyph name="cloud-upload-outline" color="white" size={22} /></Pressable>}><View style={{ flexDirection: "row", gap: 12 }}>{([['Health Profile', 'Keep age, vitals, and medical history current.', 'shield-outline'], ['Quick Rebook', 'Jump back into care with one tap from history.', 'arrow-up-outline']] as const).map(([title, text, icon]) => <Pressable accessibilityRole="button" key={title} onPress={() => setNotice(title === "Health Profile" ? "Update your health profile from the profile screen." : "Use your past records to quickly rebook the right doctor.")} style={{ flex: 1, padding: 16, borderRadius: 26, borderWidth: 1, borderColor: "#FEE2E2", backgroundColor: "white", gap: 8 }}><Glyph name={icon} color="#B91C1C" size={20} /><Heading style={{ fontSize: 14, fontWeight: "700", marginTop: 8 }}>{title}</Heading><Body style={{ fontSize: 12, lineHeight: 19 }}>{text}</Body></Pressable>)}</View><ResourceState {...result} />{[["Current Appointments", "Live requests and upcoming consultations.", active], ["Past Appointments", "Your consultation history and rebooking shortcuts.", past]].map(([title, detail, list], index) => <View key={String(title)} style={{ gap: 12 }}><View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}><View style={{ flex: 1 }}><Heading style={{ fontWeight: "700" }}>{String(title)}</Heading><Body>{String(detail)}</Body></View><Body style={{ fontSize: 12 }}>{(list as Appointment[]).length} {index ? "records" : "active"}</Body></View>{(list as Appointment[]).map(item => <AppointmentCard key={item.id} item={item} active={index === 0} navigate={navigate} notice={setNotice} reload={result.reload} />)}{!result.loading && !result.error && !(list as Appointment[]).length && <Card style={{ padding: 32, borderStyle: "dashed", borderColor: "#FECACA", alignItems: "center" }}><Glyph name={index ? "receipt-outline" : "calendar-outline"} size={30} /><Heading style={{ fontSize: 16, textAlign: "center" }}>{index ? "No treatment history yet" : "No active appointments right now"}</Heading><Body style={{ textAlign: "center" }}>{index ? "Once a consultation is completed, its record will live here for quick reference." : "Book a consultation and it will appear here as soon as the request is created."}</Body>{index === 0 && <Button title="Book an Appointment" onPress={() => navigate({ name: "care", kind: "doctors" })} />}</Card>}</View>)}{!!notice && <Card><Body>{notice}</Body><Button title="Dismiss" secondary onPress={() => { setNotice(""); setRecord(undefined); }} />{record && <Image source={{ uri: record }} style={{ height: 180 }} resizeMode="contain" />}</Card>}</Screen>;
+  return <Screen title="My Health" back={() => navigate({ name: "home" })} floating={<Pressable accessibilityRole="button" accessibilityLabel="Upload medical record" onPress={() => void upload()} style={{ position: "absolute", bottom: 96, right: 16, width: 56, height: 56, borderRadius: 28, backgroundColor: "#7F1D1D", alignItems: "center", justifyContent: "center" }}><Glyph name="cloud-upload-outline" color="white" size={22} /></Pressable>}><View style={{ flexDirection: "row", gap: 12 }}>{([['Health Profile', 'Keep age, vitals, and medical history current.', 'shield-outline'], ['Quick Rebook', 'Jump back into care with one tap from history.', 'arrow-up-outline']] as const).map(([title, text, icon]) => <Pressable accessibilityRole="button" key={title} onPress={() => setNotice(title === "Health Profile" ? "Update your health profile from the profile screen." : "Use your past records to quickly rebook the right doctor.")} style={{ flex: 1, padding: 16, borderRadius: 26, borderWidth: 1, borderColor: "#FEE2E2", backgroundColor: "white", gap: 8 }}><Glyph name={icon} color="#B91C1C" size={20} /><Heading style={{ fontSize: 14, fontWeight: "700", marginTop: 8 }}>{title}</Heading><Body style={{ fontSize: 12, lineHeight: 19 }}>{text}</Body></Pressable>)}</View><ResourceState {...result} />{[["Current Appointments", "Live requests and upcoming consultations.", active], ["Past Appointments", "Your consultation history and rebooking shortcuts.", past]].map(([title, detail, list], index) => <View key={String(title)} style={{ gap: 12 }}><View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}><View style={{ flex: 1 }}><Heading style={{ fontWeight: "700" }}>{String(title)}</Heading><Body>{String(detail)}</Body></View><Body style={{ fontSize: 12 }}>{(list as Appointment[]).length} {index ? "records" : "active"}</Body></View>{(list as Appointment[]).map(item => <AppointmentCard key={item.id} item={item} active={index === 0} navigate={navigate} />)}{!result.loading && !result.error && !(list as Appointment[]).length && <Card style={{ padding: 32, borderStyle: "dashed", borderColor: "#FECACA", alignItems: "center" }}><Glyph name={index ? "receipt-outline" : "calendar-outline"} size={30} /><Heading style={{ fontSize: 16, textAlign: "center" }}>{index ? "No appointment history yet" : "No active appointments right now"}</Heading><Body style={{ textAlign: "center" }}>{index ? "Past appointments, including rejected and cancelled requests, appear here." : "Book a consultation and it will appear here as soon as the request is created."}</Body>{index === 0 && <Button title="Book an Appointment" onPress={() => navigate({ name: "care", kind: "doctors" })} />}</Card>}</View>)}{!!notice && <Card><Body>{notice}</Body><Button title="Dismiss" secondary onPress={() => { setNotice(""); setRecord(undefined); }} />{record && <Image source={{ uri: record }} style={{ height: 180 }} resizeMode="contain" />}</Card>}</Screen>;
 }
-function AppointmentCard({ item, active, navigate, notice, reload }: { item: Appointment; active: boolean; navigate: Navigate; notice(text: string): void; reload(): void }) {
-  async function refresh() {
-    if (item.source !== "erp") { reload(); notice("Legacy booking: contact the provider for updates."); return; }
-    try { const response = await api.request<{ appointment: Appointment }>(`/appointments/${item.id}`); notice(`${response.appointment.status.replaceAll("_", " ")}${response.appointment.rejectionReason ? ": " + response.appointment.rejectionReason : ""}`); reload(); } catch (e) { notice(e instanceof Error ? e.message : "Could not refresh"); }
-  }
-  async function cancel() { if (item.source !== "erp") { notice("Contact the provider to cancel this legacy booking."); return; } try { await api.request(`/appointments/${item.id}/cancel`, { method: "POST", body: { expectedVersion: item.version } }); reload(); } catch (e) { notice(e instanceof Error ? e.message : "Could not cancel"); } }
-  const status = item.status === "rescheduled" ? "Rescheduled" : active ? item.status === "approved" ? "Live" : "Pending" : item.status === "completed" ? "Checked-Up" : item.status === "cancelled" ? "Cancelled" : item.status === "rejected" ? "Rejected" : "No Show";
-  return <Card style={{ padding: 16, borderRadius: 12, borderWidth: active ? 2 : 1, borderColor: active ? "#7F1D1D" : "#FEE2E2", overflow: "hidden" }}><View style={{ height: 4, backgroundColor: "#991B1B", margin: -16, marginBottom: 0 }} /><View style={{ flexDirection: "row", gap: 12 }}><View style={{ backgroundColor: "#FEF2F2", padding: 10, borderRadius: 16 }}><Glyph name="business-outline" size={24} /></View><View style={{ flex: 1 }}><Heading style={{ fontSize: 16 }}>{item.hospitalName || "Viruj Health Partner"}</Heading><Body style={{ fontSize: 12 }}>{item.hospitalAddress || "Location not specified"}</Body></View><View style={{ alignItems: "flex-end" }}><Body style={{ backgroundColor: active ? item.status === "approved" ? "#22C55E" : "#FBBF24" : "#DCFCE7", color: active ? "white" : "#166534", paddingHorizontal: 8, borderRadius: 12, fontSize: 11 }}>{status}</Body><Body style={{ fontSize: 12 }}>{item.appointmentMode === "video" ? "Video" : "In-person"}</Body></View></View><View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}><View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center" }}><Body>{item.doctorName.split(" ").map(n => n[0]).join("")}</Body></View><View style={{ flex: 1 }}><Heading style={{ fontSize: 16 }}>{item.doctorName}</Heading><Body style={{ fontSize: 12 }}>{item.doctorSpecialty || item.departmentName || "Specialist"}</Body></View><View><Body style={{ fontSize: 12 }}>{new Date(item.appointmentDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</Body><Body style={{ fontSize: 12 }}>{item.appointmentTime}</Body></View></View><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Button title={item.status === "cancelled" ? "Book Again" : active ? "Live Status" : "Rebook"} onPress={() => active ? void refresh() : navigate(item.doctorId ? { name: "booking", id: String(item.doctorId) } : { name: "care", kind: "doctors" })} style={{ flex: 1, borderRadius: 8, minHeight: 40 }} textStyle={{ fontSize: 12 }} />{item.status !== "cancelled" && <Button title={active ? "Cancel" : "Prescription"} onPress={() => active ? void cancel() : notice("Prescription download is not connected yet.")} style={{ flex: 1, borderRadius: 8, minHeight: 40 }} textStyle={{ fontSize: 12 }} />}</View></Card>;
+export function useAppointmentRefresh(reload: () => void) {
+  const refresh = useRef(reload); refresh.current = reload;
+  useEffect(() => {
+    const timer = setInterval(() => { if (AppState.currentState === "active") refresh.current(); }, 15000);
+    const listener = AppState.addEventListener("change", state => { if (state === "active") refresh.current(); });
+    return () => { clearInterval(timer); listener.remove(); };
+  }, []);
 }
-function Section({ title, subtitle }: { title: string; subtitle: string }) { return <View style={{ gap: 8, marginBottom: 16 }}><Heading style={{ fontSize: 24, fontWeight: "700" }}>{title}</Heading><Body style={{ fontSize: 12, color: "#9CA3AF" }}>{subtitle}</Body></View>; }
-export function Booking({ doctorId, providerId, back, complete }: { doctorId: string; providerId?: string; back(): void; complete(): void }) {
-  const { session } = useSession();
-  const profile = useResource<Profile>(`/users/${session!.user.id}`);
-  const doctor = useResource<{ data: CareItem }>(`/doctors/${doctorId}`);
-  const [step, setStep] = useState(1), [practiceId, setPracticeId] = useState(""), [slotId, setSlotId] = useState("");
-  const [slots, setSlots] = useState<{ id: string; startsAt: string; endsAt: string }[]>([]);
-  const [date, setDate] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(false), [error, setError] = useState("");
-  const [name, setName] = useState(""), [phone, setPhone] = useState(""), [reason, setReason] = useState("");
-  const [requestId] = useState(() => Crypto.randomUUID());
-  const practices = (doctor.data?.data.practices || []).filter(p => !providerId || String(p.hospitalId) === providerId);
-  const practice = practices.find(p => p.id === practiceId);
-  const slot = slots.find(s => s.id === slotId);
-  useEffect(() => { if (profile.data) { setName(profile.data.name); setPhone(profile.data.phoneNumber || ""); } }, [profile.data]);
+const statusNames: Record<string, string> = { pending_approval: "Pending approval", approved: "Approved", rejected: "Rejected", completed: "Completed", cancelled: "Cancelled", rescheduled: "Rescheduled", no_show: "No show" };
+function appointmentStatus(item: Appointment) { return item.status === "completed" && item.arrivalVerifiedAt ? "Attendance verified" : statusNames[item.status] || item.status.replaceAll("_", " "); }
+function AppointmentCard({ item, active, navigate }: { item: Appointment; active: boolean; navigate: Navigate }) {
+  return <Card style={{ borderColor: active ? "#7F1D1D" : "#E5E7EB", borderWidth: active ? 2 : 1 }}>
+    <View style={{ flexDirection: "row", gap: 10 }}><Glyph name="business-outline" /><View style={{ flex: 1 }}><Heading>{item.hospitalName || "Viruj Health Partner"}</Heading><Body>{item.hospitalAddress}</Body></View></View>
+    <Body style={{ color: ["rejected", "cancelled", "no_show"].includes(item.status) ? "#B91C1C" : "#7F1D1D", fontWeight: "700" }}>{appointmentStatus(item)}</Body>
+    <Heading style={{ fontSize: 16 }}>{item.doctorName}</Heading><Body>{item.doctorSpecialty || item.departmentName}</Body>
+    <Body>{appointmentDay(item)} · {item.appointmentTime} · {item.timezone || "Asia/Kolkata"}</Body>
+    <Body>{item.appointmentMode === "video" ? "Video consultation" : "In-person appointment"}{item.patientName ? ` · ${item.patientName}` : ""}</Body>
+    {item.status === "pending_approval" && <Body>Requested time; awaiting provider confirmation.</Body>}
+    {!!item.rejectionReason && <Body>Rejection reason: {item.rejectionReason}</Body>}
+    {!!item.cancellationReason && <Body>Cancellation reason: {item.cancellationReason}</Body>}
+    <Button title="Appointment Details" onPress={() => navigate({ name: "appointment", id: item.id })} />
+    {!active && item.doctorId && item.practiceId && <Button title="Book Again at This Provider" secondary onPress={() => navigate({ name: "booking", id: String(item.doctorId), practiceId: item.practiceId })} />}
+  </Card>;
+}
+export function AppointmentDetails({ id, back }: { id: string; back(): void }) {
+  const result = useResource<{ appointment: Appointment }>(`/appointments/${encodeURIComponent(id)}`);
+  const [otp, setOtp] = useState<{ otp: string; expiresAt: string } | null>(null), [codeNotice, setCodeNotice] = useState("");
+  const [error, setError] = useState(""), [busy, setBusy] = useState(false), [now, setNow] = useState(Date.now()), [confirmCancel, setConfirmCancel] = useState(false);
+  const cancelling = useRef(false), codeRequest = useRef(0);
+  const item = result.data?.appointment;
+  useAppointmentRefresh(result.reload);
   useEffect(() => {
-    const available = (doctor.data?.data.practices || []).filter(p => (!providerId || String(p.hospitalId) === providerId) && p.bookingEnabled);
-    setPracticeId(current => available.some(p => p.id === current) ? current : available.length === 1 ? available[0]!.id : "");
-  }, [doctor.data, providerId]);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    const listener = AppState.addEventListener("change", state => { if (state !== "active") { codeRequest.current++; setOtp(null); } });
+    return () => { codeRequest.current++; clearInterval(timer); listener.remove(); };
+  }, []);
   useEffect(() => {
-    setSlotId(""); setSlots([]); setError(""); if (!practiceId) return;
-    const controller = new AbortController(); setLoading(true);
-    const until = new Date(Date.now() + 14 * 86400000).toISOString();
-    api.request<{ data: typeof slots }>(`/doctors/${doctorId}/practices/${practiceId}/slots?startsUntil=${encodeURIComponent(until)}`, { signal: controller.signal })
-      .then(result => { if (!controller.signal.aborted) { setSlots(result.data); setDate(result.data[0] ? localDate(result.data[0].startsAt) : ""); } })
-      .catch(e => { if (!controller.signal.aborted) setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    const request = ++codeRequest.current;
+    setOtp(null); setCodeNotice("");
+    if (item?.source !== "erp" || item.status !== "approved" || result.error || AppState.currentState !== "active") return;
+    const controller = new AbortController();
+    api.request<{ otp: string; expiresAt: string }>(`/appointments/${encodeURIComponent(id)}/arrival-otp`, { signal: controller.signal })
+      .then(value => { if (!controller.signal.aborted && request === codeRequest.current) { setOtp(value); setNow(Date.now()); } })
+      .catch(e => { if (!controller.signal.aborted && request === codeRequest.current) setCodeNotice(e instanceof ApiError && e.status === 404 ? "Reception has not requested an arrival code yet." : e instanceof ApiError && e.status === 409 ? "Your arrival code expired. Ask reception for a new code." : e instanceof Error ? e.message : "Could not retrieve your arrival code."); });
     return () => controller.abort();
-  }, [practiceId, doctorId]);
-  useBack(step === 2, () => setStep(1));
-  async function submit() {
-    if (busy || !slot || !practice?.bookingEnabled) return;
-    setBusy(true); setError("");
-    try {
-      await api.request("/appointments", { method: "POST", body: { requestId, doctorId: Number(doctorId), practiceId, scheduleSlotId: slot.id,
-        fullName: name, phoneNumber: phone, appointmentType: "in-person", additionalComments: reason } });
-      setStep(3);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not submit request"); }
-    finally { setBusy(false); }
+  }, [result.data, result.error, id]);
+  async function cancel() {
+    if (cancelling.current || !item || item.source !== "erp") return;
+    cancelling.current = true; setBusy(true); setError("");
+    try { await api.request(`/appointments/${encodeURIComponent(id)}/cancel`, { method: "POST", body: { expectedVersion: item.version } }); setConfirmCancel(false); result.reload(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not cancel appointment."); result.reload(); }
+    finally { cancelling.current = false; setBusy(false); }
   }
-  return <Screen title="Book Appointment" back={() => step === 2 ? setStep(1) : back()}>
-    <ResourceState {...doctor} /><ResourceState {...profile} />
-    <Card><Heading>{doctor.data?.data.name || "Doctor"}</Heading><Body>{doctor.data?.data.specialty}</Body></Card>
-    {step === 1 && <>
-      <Section title="Patient Details" subtitle="Contact information for your appointment" />
-      <Field label="Full name" value={name} onChangeText={setName} /><Field label="Phone number" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-      <Field label="Reason for visit" multiline value={reason} onChangeText={setReason} />
-      <Section title="Practice Location" subtitle={providerId ? "Book within your selected provider" : "Choose where you want to see this doctor"} />
-      {practices.map(p => <Pressable key={p.id} accessibilityRole="radio" accessibilityState={{ checked: practiceId === p.id, disabled: !p.bookingEnabled }} disabled={!p.bookingEnabled} onPress={() => setPracticeId(p.id)}><Card style={{ borderColor: practiceId === p.id ? "#7F1D1D" : "#E5E7EB", borderWidth: practiceId === p.id ? 2 : 1 }}><Heading>{p.name}</Heading><Body>{p.address}</Body>{!p.bookingEnabled && <Body>Online booking is unavailable.</Body>}</Card></Pressable>)}
-      {!doctor.loading && !practices.length && <Empty title="Online booking is unavailable" detail="This directory provider has no connected booking practice. Contact the provider directly." />}
-      <Button title="Choose Schedule" disabled={!practice?.bookingEnabled || !name.trim() || !/^\+?[\d -]{7,20}$/.test(phone)} onPress={() => setStep(2)} />
-    </>}
-    {step === 2 && <>
-      <Section title="Select Date" subtitle="Published availability in India time" />
-      <ScrollView horizontal contentContainerStyle={{ gap: 12 }}>{[...new Set(slots.map(s => localDate(s.startsAt)))].map(day => <Button key={day} title={day} secondary={date !== day} onPress={() => { setDate(day); setSlotId(""); }} />)}</ScrollView>
-      <Section title="Available Slots" subtitle="In-person consultation" />
-      {loading && <Body>Loading availability…</Body>}
-      {!loading && !slots.length && !error && <Empty title="No available slots" detail="Choose another practice or check again later." />}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{slots.filter(s => localDate(s.startsAt) === date).map(s => <Button key={s.id} title={localTime(s.startsAt)} secondary={slotId !== s.id} onPress={() => setSlotId(s.id)} />)}</View>
-      <Card><Heading>{practice?.name}</Heading><Body>{practice?.address}</Body></Card>
-      <Button title="Submit Appointment Request" busy={busy} disabled={!slot} onPress={() => void submit()} />
+  const remaining = otp ? Math.max(0, Math.ceil((new Date(otp.expiresAt).getTime() - now) / 1000)) : 0;
+  return <Screen title="Appointment Details" back={back}>
+    <ResourceState {...result} /><Button title="Refresh Status" secondary onPress={result.reload} />
+    {item && <>
+      <Card><Body style={{ color: "#7F1D1D", fontWeight: "700" }}>{appointmentStatus(item)}</Body><Heading>{item.hospitalName}</Heading><Body>{item.hospitalAddress}</Body><Heading style={{ fontSize: 16 }}>{item.doctorName}</Heading><Body>{item.doctorSpecialty || item.departmentName}</Body><Body>Patient: {item.patientName || "Your profile"}</Body><Body>{appointmentDay(item)} · {item.appointmentTime} · {item.timezone || "Asia/Kolkata"}</Body><Body>{item.appointmentMode === "video" ? "Video consultation" : "In-person appointment"}</Body>{!!item.reason && <Body>Reason for visit: {item.reason}</Body>}{!!item.rejectionReason && <Body>Rejection reason: {item.rejectionReason}</Body>}{!!item.cancellationReason && <Body>Cancellation reason: {item.cancellationReason}</Body>}</Card>
+      {item.bookingDetails && <Card><Heading>Patient Assessment</Heading><Body>{item.bookingDetails.age ?? "Not supplied"} years · {item.bookingDetails.gender || "Not supplied"}</Body><Body>Height: {item.bookingDetails.height ?? "Not supplied"} cm · Weight: {item.bookingDetails.weight ?? "Not supplied"} kg</Body>{!!item.bookingDetails.complaintPhoto && <Image source={{ uri: item.bookingDetails.complaintPhoto }} accessibilityLabel="Appointment symptom photo" style={{ height: 200 }} resizeMode="contain" />}</Card>}
+      {item.status === "pending_approval" && <Card><Heading>Awaiting Provider Approval</Heading><Body>The provider will review your requested time. A notification appears when your appointment is approved or rejected.</Body></Card>}
+      {item.status === "rescheduled" && <Card><Heading>Rescheduled</Heading><Body>Your provider changed the appointment time. Review the new details and wait for their confirmation.</Body></Card>}
+      {item.source === "erp" && item.status === "approved" && <Card style={{ borderColor: "#7F1D1D", backgroundColor: "#FFF1F2" }}><Heading>Verify Your Arrival</Heading><Body>After you arrive, reception requests a four-digit code. Tell that code to reception for this appointment.</Body>{otp && remaining > 0 && !result.error ? <><Body style={{ fontSize: 36, lineHeight: 48, letterSpacing: 10, color: "#7F1D1D", textAlign: "center" }}>{otp.otp}</Body><Body>Expires in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}</Body></> : <Body>{otp ? "This code expired. Ask reception for a new code." : codeNotice || "Checking for your arrival code…"}</Body>}<Button title="Refresh Arrival Code" secondary onPress={result.reload} /></Card>}
+      {item.status === "completed" && <Card><Heading>{appointmentStatus(item)}</Heading><Body>{item.arrivalVerifiedAt ? "Your arrival was verified. This confirms attendance, not that medical treatment has finished." : "This appointment is recorded as completed by your provider."}</Body>{(item.arrivalVerifiedAt || item.completedAt) && <Body>{new Date(item.arrivalVerifiedAt || item.completedAt!).toLocaleString("en-IN", { timeZone: item.timezone || "Asia/Kolkata" })}</Body>}</Card>}
+      {item.source === "erp" && ["pending_approval", "approved", "rescheduled"].includes(item.status) && (confirmCancel ? <Card><Heading>Cancel this appointment?</Heading><Button title="Confirm Cancellation" busy={busy} onPress={() => void cancel()} /><Button title="Keep Appointment" secondary disabled={busy} onPress={() => setConfirmCancel(false)} /></Card> : <Button title="Cancel Appointment" secondary onPress={() => setConfirmCancel(true)} />)}
+      {item.source !== "erp" && <Body>This historical booking is retained from the previous system. Contact your provider for changes.</Body>}
     </>}
     <ErrorText message={error} />
-    {step === 3 && <Card><Heading>Request Submitted</Heading><Body>Your request is in the selected provider’s appointment queue. You can follow its status in My Health.</Body><Body>{practice?.name} · {slot && localTime(slot.startsAt)}</Body><Button title="View My Health" onPress={complete} /></Card>}
   </Screen>;
 }
-function localDate(value: string) { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value)); }
-function localTime(value: string) { return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }).format(new Date(value)); }
