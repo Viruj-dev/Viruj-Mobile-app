@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { type CareItem, webOrigin } from "./api";
 import { SearchResults } from "./care";
 import { useSession } from "./session";
-import { Body, Empty, Glyph, ResourceState, useResource } from "./ui";
+import { Empty, Glyph, ResourceState, useResource } from "./ui";
 import { useDevicePreferences } from "./device-preferences";
 
 export type Destination = { name: string; id?: string; kind?: string; query?: string; providerId?: string; practiceId?: string };

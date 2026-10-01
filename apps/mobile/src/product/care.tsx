@@ -186,7 +186,7 @@ export function ProviderCard({
                     textTransform: "uppercase",
                   }}
                 >
-                  ● {Array.isArray(item.departments) ? item.departments.map(d => d.name).join(" · ") || "Multi-speciality hospital" : item.departments || "Multi-speciality hospital"}
+                  ● {Array.isArray(item.departments) ? item.departments.map(d => d.name).join(" · ") || (kind === "clinics" ? "Clinic" : "Multi-speciality hospital") : item.departments || (kind === "clinics" ? "Clinic" : "Multi-speciality hospital")}
                 </Body>
               </>
             )}
@@ -302,7 +302,7 @@ function Directory({
               ? "Search doctors..."
               : kind === "hospitals"
                 ? "Search hospitals, city, or state..."
-                : "Search doctors, specialties, or hospitals..."
+                : kind === "clinics" ? "Search clinics, city, or area..." : "Search doctors, specialties, or hospitals..."
           }
           value={search}
           onChange={setSearch}
@@ -460,7 +460,7 @@ function ProviderDetail({
     <Screen title={doctor ? "Doctor Details" : kind === "clinics" ? "Clinic Details" : "Hospital Details"} back={back}>
       <ResourceState {...result} />
       {!result.loading && !result.error && !item && (
-        <Empty title={doctor ? "Doctor not found" : "Hospital not found"} />
+        <Empty title={doctor ? "Doctor not found" : kind === "clinics" ? "Clinic not found" : "Hospital not found"} />
       )}
       {item && (
         <>
