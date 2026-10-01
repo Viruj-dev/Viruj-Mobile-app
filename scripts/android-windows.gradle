@@ -2,8 +2,8 @@
 allprojects {
     afterEvaluate { project ->
         if (project.name in ['app', 'react-native-nitro-google-signin']) {
-            project.android.externalNativeBuild.cmake.buildStagingDirectory = new File(System.getenv('LOCALAPPDATA'), "VirujBuildTools/${project.name}-cxx")
-            project.android.defaultConfig.externalNativeBuild.cmake.arguments '-DCMAKE_OBJECT_PATH_MAX=200'
+            project.android.externalNativeBuild.cmake.buildStagingDirectory = new File(System.getenv('LOCALAPPDATA'), "VirujBuildTools/cxx/${project.name == 'app' ? 'a' : 'g'}")
+            project.android.defaultConfig.externalNativeBuild.cmake.arguments '-DCMAKE_OBJECT_PATH_MAX=250'
         }
     }
 }
