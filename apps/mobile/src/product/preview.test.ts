@@ -3,6 +3,17 @@ import { api } from "./api";
 import { startPreview, stopPreview, previewEnabled } from "./preview";
 import { validBookingDate } from "./booking-validation";
 
+test("saved-area and clinic previews remain offline", async () => {
+  startPreview();
+  try {
+    const areas = await api.request<{ data: { latitude: number; longitude: number }[] }>("/location/search?q=Ghaziabad");
+    expect(areas.data[0]).toMatchObject({ latitude: 28.6692, longitude: 77.4538 });
+    const clinics = await api.request<{ data: { id: number; name: string }[] }>("/clinics?latitude=28.6692&longitude=77.4538&radiusKm=10");
+    expect(clinics.data[0]!.name).toBe("Demo Neighbourhood Clinic");
+    expect((await api.request<{ data: { id: number } }>("/clinics/3")).data.id).toBe(3);
+  } finally { stopPreview(); }
+});
+
 test("preview click flows stay local, update state, and reset on exit", async () => {
   const fetcher = globalThis.fetch; globalThis.fetch = (() => { throw new Error("UI preview must never use the network"); }) as unknown as typeof fetch;
   try {

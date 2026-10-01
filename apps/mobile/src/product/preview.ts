@@ -13,6 +13,7 @@ const doctors: CareItem[] = [
 const hospitals: CareItem[] = [{ id: 1, name: "Demo Care Centre", city: "Noida", address: "Sector 62, Noida", description: "A sample multispecialty hospital. Explore departments and choose a specialist.", rating: 4.8, availability: "Open 24 hours" }, { id: 2, name: "Demo Family Hospital", city: "Delhi", address: "New Delhi", description: "Sample family healthcare facility.", rating: 4.7 }];
 for (const doctor of doctors) doctor.practices = [{ id: `preview-practice-${doctor.hospital_id}`, tenantId: `preview-tenant-${doctor.hospital_id}`, clinicId: `preview-clinic-${doctor.hospital_id}`, hospitalId: Number(doctor.hospital_id), name: doctor.hospitalName!, bookingEnabled: true, modes: ["in-person"] }];
 const labs: CareItem[] = [{ id: 1, name: "Demo Diagnostics", city: "Noida", area: "Sector 62", address: "Sector 62, Noida", startingPrice: 299, rating: 4.8, description: "Sample lab profile for browsing tests and packages." }];
+const clinics: CareItem[] = [{ id: 3, name: "Demo Neighbourhood Clinic", city: "Ghaziabad", address: "Indirapuram, Ghaziabad", description: "Sample clinic for the nearby care preview.", rating: 4.7 }];
 export const departmentNames = ["Surgery", "Cardiac Sciences", "Neurosciences", "Orthopaedics", "Internal Medicine", "Women & Child Health", "Oncology", "Diagnostics & Imaging", "Urology & Nephrology", "ENT", "Dermatology", "Psychiatry", "Dental Sciences", "Emergency & Critical Care"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 const today = new Date().toISOString();
@@ -33,6 +34,7 @@ export function stopPreview() { previewEnabled = false; }
 export async function previewRequest(path: string, options: { method?: string; body?: unknown } = {}): Promise<unknown> {
   const url = new URL(path, "https://preview.invalid"); const p = url.pathname; const method = options.method || "GET";
   const body = (options.body || {}) as Record<string, any>;
+  if (p === "/location/search") return { data: /ghaziabad|indirapuram/i.test(url.searchParams.get("q") || "") ? [{ latitude: 28.6692, longitude: 77.4538, label: "Ghaziabad · sample location" }] : [] };
   if (p === "/stories") { if (method === "POST") stories.unshift({ ...body, id: String(Date.now()), createdAt: new Date().toISOString(), author: { name: previewUser.name, image: previewUser.image }, viewCount: 0 }); return { data: [...stories] }; }
   if (p === "/auth/get-session") return previewSession;
   if (p === "/auth/sign-out") return {};
@@ -42,7 +44,7 @@ export async function previewRequest(path: string, options: { method?: string; b
   if (/^\/hospitals\/[^/]+\/doctors$/.test(p)) return { data: doctors.filter(d => String(d.hospital_id) === p.split("/")[2]) };
   if (/^\/departments\/[^/]+\/doctors$/.test(p)) return { data: doctors.filter(d => slug(d.specialty || "") === p.split("/")[2]) };
   if (/^\/doctors\/[^/]+\/practices\/[^/]+\/slots$/.test(p)) return { data: [] };
-  for (const [kind, data] of [["doctors", doctors], ["hospitals", hospitals], ["pathlabs", labs]] as const) {
+  for (const [kind, data] of [["doctors", doctors], ["hospitals", hospitals], ["clinics", clinics], ["pathlabs", labs]] as const) {
     if (p === `/${kind}`) { const q = (url.searchParams.get("search") || "").toLowerCase(); return { data: data.filter(d => `${d.name} ${d.specialty || ""} ${d.city}`.toLowerCase().includes(q)), pagination: { totalPages: 1 } }; }
     if (p.startsWith(`/${kind}/`)) return { data: data.find(d => String(d.id) === p.split("/")[2]) || null };
   }
