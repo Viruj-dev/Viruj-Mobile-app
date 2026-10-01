@@ -9,6 +9,7 @@ import { getDeviceInfo } from "../features/auth/services/device.service";
 import { signInWithProvider, signOutFromProviders } from "../features/auth/services/social-signin.service";
 import { getAccessToken, setAccessToken } from "../lib/api-client";
 import { devAuthBypass, devSession } from "./dev-session";
+import { unregisterPhoneNotifications } from "./device-notifications";
 
 type AuthState = { preview(): void; session: Session | null; loading: boolean; error: string; restore(): Promise<void>; signIn(provider: "google" | "facebook"): Promise<void>; loginEmail(email: string, password: string): Promise<void>; signupEmail(name: string, email: string, password: string): Promise<void>; sendPhoneOtp(phoneNumber: string): Promise<void>; verifyPhoneOtp(phoneNumber: string, code: string): Promise<void>; logout(): Promise<void> };
 const Context = createContext<AuthState | null>(null);
@@ -78,6 +79,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (version === generation.current) setSession(value as Session);
   }
   async function logout() {
+    // Do not leave a previous account's token receiving alerts on a shared phone.
+    await unregisterPhoneNotifications();
     generation.current++;
     try { if (!previewEnabled && !devAuthBypass) await authApi.logout(); }
     finally { await api.clear(); await signOutFromProviders().catch(() => {}); setSession(null); setError(""); }

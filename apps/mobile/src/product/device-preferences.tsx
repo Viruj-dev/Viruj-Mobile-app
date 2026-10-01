@@ -47,3 +47,8 @@ export function nearbyPath(path: string, location?: SavedLocation) {
   if (!location) return path;
   return `${path}${path.includes("?") ? "&" : "?"}latitude=${location.latitude}&longitude=${location.longitude}&radiusKm=${location.radiusKm}`;
 }
+export function useDiscoveryPath(path: string) {
+  const state = useContext(Context);
+  const discovery = /^\/(?:doctors(?:\?|$)|hospitals(?:\?|$|\/[^/]+\/(?:doctors|departments)(?:\?|$))|clinics(?:\?|$)|departments\/[^/]+\/doctors(?:\?|$)|search(?:\?|$)|providers(?:\?|$))/.test(path);
+  return discovery ? nearbyPath(path, state?.preferences.location) : path;
+}

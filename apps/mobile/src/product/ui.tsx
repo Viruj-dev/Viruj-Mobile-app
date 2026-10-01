@@ -3,6 +3,7 @@ import { ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, Pressab
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "./api";
+import { useDiscoveryPath } from "./device-preferences";
 
 export const colors = { primary: "#B91C1C", deep: "#7F1D1D", ink: "#111827", muted: "#6B7280", bg: "#F8FAFC", line: "#EEE1DE", soft: "#FCECEA", white: "#FFFFFF", red: "#AC3434" };
 export type Icon = keyof typeof Ionicons.glyphMap;
@@ -23,7 +24,8 @@ export function Screen({ title, subtitle, back, children, right, floating, scrol
   return <SafeAreaView edges={["top", "left", "right"]} style={s.screen}><View style={[s.header, Platform.OS === "web" ? { backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" } as ViewStyle : { experimental_backgroundImage: "linear-gradient(90deg, #7C1117 0%, #62090F 60%, #271513 100%)" }]}>{back && <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={back} style={s.iconButton}><Glyph name="arrow-back" color={colors.ink} /></Pressable>}<View style={{ flex: 1 }}><Text accessibilityRole="header" style={s.title}>{title}</Text></View>{right}</View><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>{scroll ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>{children}</ScrollView> : children}</KeyboardAvoidingView>{floating}</SafeAreaView>;
 }
 export function Row({ title, detail, icon, onPress }: { title: string; detail?: string; icon: Icon; onPress(): void }) { return <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={s.row}><View style={s.iconTile}><Glyph name={icon} /></View><View style={{ flex: 1, gap: 4 }}><Text style={s.rowTitle}>{title}</Text>{detail && <Text style={s.body}>{detail}</Text>}</View><Glyph name="chevron-forward" size={18} color={colors.muted} /></Pressable>; }
-export function useResource<T>(path: string) {
+export function useResource<T>(resourcePath: string) {
+  const path = useDiscoveryPath(resourcePath);
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);

@@ -22,6 +22,7 @@ import {
   Field,
 } from "./ui";
 import { PathlabDetail, Pathlabs } from "./pathlabs";
+import { useDevicePreferences } from "./device-preferences";
 export function Photo({
   item,
   kind,
@@ -223,6 +224,7 @@ function Directory({
   back(): void;
   departmentPage?: boolean;
 }) {
+  const { preferences } = useDevicePreferences();
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -267,10 +269,11 @@ function Directory({
             ? "Hospitals"
             : hospitalId
               ? "Hospital Doctors"
-              : "All Doctors"
+            : kind === "clinics" ? "Nearby Clinics" : "Nearby Doctors"
       }
       back={back}
     >
+      <Row title={`Within ${preferences.location?.radiusKm} km`} detail={preferences.location?.label} icon="location-outline" onPress={() => navigate({ name: "device-settings" })} />
       {department &&
         (departmentPage ? (
           <Body>Find The Best {title} Doctors Near You</Body>
@@ -316,7 +319,7 @@ function Directory({
           detail={
             department
               ? "Try another department or check again later."
-              : "Try adjusting your search criteria"
+              : "No providers in this area yet. Change your saved location or increase the radius."
           }
         />
       )}
@@ -453,7 +456,7 @@ function ProviderDetail({
     );
   }
   return (
-    <Screen title={doctor ? "Doctor Details" : "Hospital Details"} back={back}>
+    <Screen title={doctor ? "Doctor Details" : kind === "clinics" ? "Clinic Details" : "Hospital Details"} back={back}>
       <ResourceState {...result} />
       {!result.loading && !result.error && !item && (
         <Empty title={doctor ? "Doctor not found" : "Hospital not found"} />
@@ -896,7 +899,7 @@ export function SearchResults({
                 ? { name: "care", kind: "doctors", query: item.name }
                 : {
                     name: "detail",
-                    kind: item.type === "doctor" ? "doctors" : "hospitals",
+                    kind: item.type === "doctor" ? "doctors" : item.type === "clinic" ? "clinics" : "hospitals",
                     id: String(item.id),
                   },
             )

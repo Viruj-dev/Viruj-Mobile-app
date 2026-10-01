@@ -4,7 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { type CareItem, webOrigin } from "./api";
 import { SearchResults } from "./care";
 import { useSession } from "./session";
-import { Glyph, ResourceState, useResource } from "./ui";
+import { Body, Empty, Glyph, ResourceState, useResource } from "./ui";
+import { useDevicePreferences } from "./device-preferences";
 
 export type Destination = { name: string; id?: string; kind?: string; query?: string; providerId?: string; practiceId?: string };
 export type Navigate = (destination: Destination) => void;
@@ -29,7 +30,7 @@ const services = [
   { label: "Doctors", kind: "doctors", image: require("../../assets/web/doctor.png"), bg: "#F5F9FF", border: "#DBEAFE" },
   { label: "Hospitals", kind: "hospitals", image: require("../../assets/web/hospital.png"), bg: "#FFF8F8", border: "#FEE2E2" },
   { label: "Pathlabs", kind: "pathlabs", image: require("../../assets/web/pathlab.png"), bg: "#F3FCF7", border: "#D1FAE5" },
-  { label: "Clinics", kind: "", image: require("../../assets/web/clinics.png"), bg: "#FFFAF5", border: "#FFEDD5" },
+  { label: "Clinics", kind: "clinics", image: require("../../assets/web/clinics.png"), bg: "#FFFAF5", border: "#FFEDD5" },
   { label: "Radiology", kind: "", image: require("../../assets/web/radiology.png"), bg: "#FCF8FF", border: "#F3E8FF" },
 ];
 const banners = [require("../../assets/web/banner-1.png"), require("../../assets/web/banner-2.png"), require("../../assets/web/banner-3.png")];
@@ -38,6 +39,7 @@ const gradient: ViewStyle = Platform.OS === "web" ? { backgroundImage: headerGra
 
 export function Home({ navigate }: { navigate: Navigate }) {
   const { session } = useSession();
+  const { preferences } = useDevicePreferences();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [banner, setBanner] = useState(0);
@@ -55,6 +57,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
           <View style={{ gap: 4, flex: 1 }}><Text style={h.welcome}>Welcome Back</Text><Text style={h.name}>{session?.user.name || "User"}</Text><Text style={h.overview}>Here's your health overview</Text></View>
           <Pressable accessibilityRole="button" accessibilityLabel="Notifications" onPress={() => navigate({ name: "notifications" })} style={h.bell}><Glyph name="notifications-outline" color="white" size={20} /></Pressable>
         </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Change saved location" onPress={() => navigate({ name: "device-settings" })} style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF18", borderRadius: 16, padding: 12, marginBottom: 16, minHeight: 48 }}><Glyph name="location-outline" color="white" size={20} /><View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: "white", fontSize: 13 }}>{preferences.location?.label}</Text><Text style={{ color: "#FFFFFFBB", fontSize: 11 }}>Within {preferences.location?.radiusKm} km · Change</Text></View><Glyph name="chevron-down" color="white" size={16} /></Pressable>
         <View style={h.search}><Glyph name="search-outline" color="#9CA3AF" size={20} /><TextInput accessibilityLabel="Search doctors, hospitals, departments" placeholder="Search doctors, hospitals, departments..." value={search} onChangeText={setSearch} style={{ flex: 1, minWidth: 0, minHeight: 44, fontFamily: "Merienda", fontSize: 13 }} /></View>{search.trim().length >= 2 && <View style={{ backgroundColor: "white", borderRadius: 16, padding: 12 }}><SearchResults query={search.trim()} navigate={d => { setSearch(""); navigate(d); }} /></View>}
       </View>
       <View style={h.content}>
@@ -65,8 +68,8 @@ export function Home({ navigate }: { navigate: Navigate }) {
         </View>
         <View style={{ gap: 8 }}><Text style={h.pill}>Discounts & Offers</Text><View style={[h.banner, { height: 140 }]}><Image source={banners[banner]} accessibilityLabel={`Hospital offer ${banner + 1}`} style={{ width: "100%", height: "100%" }} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Previous offer" onPress={() => changeBanner(-1)} style={[h.arrow, { left: 8 }]}><Glyph name="chevron-back" color="#374151" /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Next offer" onPress={() => changeBanner(1)} style={[h.arrow, { right: 8 }]}><Glyph name="chevron-forward" color="#374151" /></Pressable></View></View>
         <View style={{ gap: 24 }}><Text style={h.pill}>HEALTHCARE SERVICES</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingHorizontal: 8, paddingBottom: 24 }}>{services.map(service => <Pressable key={service.label} accessibilityRole="button" disabled={!service.kind} onPress={() => navigate({ name: "care", kind: service.kind })} style={{ alignItems: "center", gap: 16 }}><View style={[h.service, { backgroundColor: service.bg, borderColor: service.border }]}><Image source={service.image} style={{ width: "100%", height: "100%", opacity: service.kind ? 1 : 0.5 }} resizeMode="contain" /></View>{!service.kind && <Text style={h.soon}>SOON</Text>}<Text style={{ fontSize: 14, color: service.kind ? "#1F2937" : "#9CA3AF" }}>{service.label}</Text></Pressable>)}</ScrollView></View>
-        <View style={{ gap: 16 }}><SectionTitle title="Top Doctors" detail="Consult with our best specialists" onPress={() => navigate({ name: "care", kind: "doctors" })} /><ResourceState {...doctors} />{doctors.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="doctors" navigate={navigate} />)}</View>
-        <View style={{ gap: 16 }}><SectionTitle title="Nearby Hospitals" detail="Quality healthcare facilities near you" onPress={() => navigate({ name: "care", kind: "hospitals" })} /><ResourceState {...hospitals} />{hospitals.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="hospitals" navigate={navigate} />)}</View>
+        <View style={{ gap: 16 }}><SectionTitle title="Nearby Doctors" detail={`Specialists within ${preferences.location?.radiusKm} km`} onPress={() => navigate({ name: "care", kind: "doctors" })} /><ResourceState {...doctors} />{doctors.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="doctors" navigate={navigate} />)}{!doctors.loading && !doctors.error && doctors.data?.data.length === 0 && <Empty title="No doctors in this area yet" detail="Change your location or increase the search radius." />}</View>
+        <View style={{ gap: 16 }}><SectionTitle title="Nearby Hospitals" detail={`Hospitals within ${preferences.location?.radiusKm} km`} onPress={() => navigate({ name: "care", kind: "hospitals" })} /><ResourceState {...hospitals} />{hospitals.data?.data.slice(0, 4).map(item => <FeaturedCard key={item.id} item={item} kind="hospitals" navigate={navigate} />)}{!hospitals.loading && !hospitals.error && hospitals.data?.data.length === 0 && <Empty title="No hospitals in this area yet" detail="Change your location or increase the search radius." />}</View>
       </View>
     </ScrollView>
   </SafeAreaView>;
