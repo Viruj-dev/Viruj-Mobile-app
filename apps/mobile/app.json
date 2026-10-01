@@ -34,7 +34,9 @@
     "plugins": [
       "expo-audio",
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      "expo-notifications",
+      ["expo-location", { "locationWhenInUsePermission": "Allow Viruj to save your location and find nearby doctors, hospitals and clinics." }]
     ]
   }
 }

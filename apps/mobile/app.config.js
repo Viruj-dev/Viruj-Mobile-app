@@ -8,6 +8,8 @@ module.exports = () => {
   if (facebookEnabled && (!facebookAppId || !facebookClientToken)) throw new Error("Set Facebook app ID and client token to enable Facebook sign-in.");
   return {
     ...expo,
+    extra: { ...expo.extra, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
+    android: { ...expo.android, ...(process.env.EXPO_PUBLIC_GOOGLE_SERVICES_FILE ? { googleServicesFile: process.env.EXPO_PUBLIC_GOOGLE_SERVICES_FILE } : {}) },
     ios: { ...expo.ios, bundleIdentifier: "com.virujhealth.app" },
     plugins: [
       ...expo.plugins,
