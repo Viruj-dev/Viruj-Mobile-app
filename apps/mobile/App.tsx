@@ -4,17 +4,9 @@ import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "./src/product/session";
 import { PatientApp } from "./src/product/app";
-import { Platform } from "react-native";
-import * as Haptics from "expo-haptics";
-import { hapticsEnabled } from "./src/product/device-preferences";
+import { touchFeedback } from "./src/product/device-haptics";
 
 import "./global.css";
-let lastTouch = 0;
-function touchFeedback() {
-  if (Platform.OS === "web" || !hapticsEnabled || Date.now() - lastTouch < 80) return;
-  lastTouch = Date.now();
-  void Haptics.selectionAsync().catch(() => {});
-}
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({ Merienda: require("./assets/fonts/Merienda.ttf") });

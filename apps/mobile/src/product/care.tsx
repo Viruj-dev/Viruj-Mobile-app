@@ -120,6 +120,7 @@ export function ProviderCard({
             >
               {item.name}
             </Heading>
+            {item.distanceKm != null && <Body style={{ color: colors.deep, fontSize: 12 }}>{item.distanceKm} km away</Body>}
             {doctor ? (
               <>
                 <Body

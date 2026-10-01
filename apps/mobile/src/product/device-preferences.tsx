@@ -2,17 +2,14 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { previewEnabled } from "./preview";
+import { isDiscoveryPath, nearbyPath, validSavedLocation, type SavedLocation } from "./device-location";
+export type { SavedLocation } from "./device-location";
 
-export type SavedLocation = { latitude: number; longitude: number; label: string; radiusKm: number };
 export type DevicePreferences = { location?: SavedLocation; notificationsAsked?: boolean; haptics?: boolean };
 export let hapticsEnabled = true;
 type State = { preferences: DevicePreferences; loading: boolean; error: string; save(value: DevicePreferences): Promise<void>; reload(): void };
 const Context = createContext<State | null>(null);
 function storageKey(userId: string) { return `viruj.preferences.${userId.split("").map(c => c.charCodeAt(0).toString(16)).join("-")}`; }
-export function validSavedLocation(value: unknown): value is SavedLocation {
-  const point = value as SavedLocation | null;
-  return !!point && typeof point.latitude === "number" && Number.isFinite(point.latitude) && Math.abs(point.latitude) <= 90 && typeof point.longitude === "number" && Number.isFinite(point.longitude) && Math.abs(point.longitude) <= 180 && typeof point.label === "string" && point.label.trim().length > 0 && Number.isFinite(point.radiusKm) && point.radiusKm >= 1 && point.radiusKm <= 100;
-}
 export function DevicePreferencesProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [preferences, setPreferences] = useState<DevicePreferences>({});
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
@@ -43,12 +40,7 @@ export function DevicePreferencesProvider({ userId, children }: { userId: string
   return <Context.Provider value={{ preferences, loading, error, save, reload: () => setVersion(v => v + 1) }}>{children}</Context.Provider>;
 }
 export function useDevicePreferences() { const value = useContext(Context); if (!value) throw new Error("Device preferences provider missing"); return value; }
-export function nearbyPath(path: string, location?: SavedLocation) {
-  if (!location) return path;
-  return `${path}${path.includes("?") ? "&" : "?"}latitude=${location.latitude}&longitude=${location.longitude}&radiusKm=${location.radiusKm}`;
-}
 export function useDiscoveryPath(path: string) {
   const state = useContext(Context);
-  const discovery = /^\/(?:doctors(?:\?|$)|hospitals(?:\?|$|\/[^/]+\/(?:doctors|departments)(?:\?|$))|clinics(?:\?|$)|departments\/[^/]+\/doctors(?:\?|$)|search(?:\?|$)|providers(?:\?|$))/.test(path);
-  return discovery ? nearbyPath(path, state?.preferences.location) : path;
+  return isDiscoveryPath(path) ? nearbyPath(path, state?.preferences.location) : path;
 }
