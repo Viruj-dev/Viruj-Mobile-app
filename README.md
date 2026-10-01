@@ -12,6 +12,7 @@ Use `http://10.0.2.2:4000` for Android emulator or your computer's LAN IP for a 
 Copy `apps/mobile/.env.example` to `.env.local` and set the Google Web client ID and API URL. Set the Google iOS client ID before an iOS build. Facebook sign-in is deferred until its Android app is registered with Meta after Play Store publishing; then set the Facebook app ID and client token and `EXPO_PUBLIC_ENABLE_FACEBOOK_SIGN_IN=true`. Never bundle the Facebook app secret or database credentials. Restart Expo and rebuild the native app after changing provider IDs.
 
 Run `bun run dev:api` and `bun run dev:mobile` in separate terminals.
+Google sign-in also needs the web auth service configured by the backend's `WEB_AUTH_BASE_URL`. If it points to `http://localhost:3000`, run `bun run dev` in `../virujhealthapp` too. Keep these services running and the phone on the same LAN when using a local API URL; USB is not required. The backend's `bun run dev` enables both ERP and mobile routes; `dev:erp` alone returns 404 for mobile sign-in.
 The native Google and Facebook SDKs require a development or release build; Expo Go cannot run sign-in. Android Google sign-in uses Credential Manager's in-app account sheet. iOS uses Google's native SDK, which can show a system authentication sheet when required.
 Use the built-in **Explore UI preview** for synthetic offline data.
 

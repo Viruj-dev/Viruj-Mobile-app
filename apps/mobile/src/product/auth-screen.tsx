@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AuthIntro } from "./auth-intro";
 import { Button, Field, useBack } from "./ui";
 import { useSession } from "./session";
+import { getSignInErrorMessage as authMessage } from "../features/auth/utils/auth-errors";
 
 // The native Google button imports the React Native bridge, which is unavailable on web.
 const GoogleSignInButton = Platform.OS === "web" ? null : require("react-native-nitro-google-signin").GoogleSignInButton as typeof import("react-native-nitro-google-signin").GoogleSignInButton;
@@ -89,19 +90,6 @@ export function AuthScreen() {
       </>}
     </View></ScrollView>
   </KeyboardAvoidingView></SafeAreaView>;
-}
-
-function authMessage(cause: unknown) {
-  const code = cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "";
-  if (code === "email_in_use") return "This email already has an account. Please sign in.";
-  if (code === "invalid_credentials") return "Email or password is incorrect.";
-  if (code === "too_many_attempts") return "Too many attempts. Please try again later.";
-  if (code === "invalid_otp") return "Incorrect or expired code. Please try again.";
-  if (code === "sms_gateway_not_configured") return "SMS gateway setup is incomplete. Please use email or Google for now.";
-  if (code === "account_link_requires_verification") return "This email is already in use. Please contact support to connect your accounts.";
-  if (code === "provider_unavailable") return "Sign-in service is unavailable. Please try again.";
-  if (code === "NETWORK_ERROR") return "Connection lost. Check your internet and try again.";
-  return "Sign-in could not be completed. Please try again.";
 }
 
 const styles = StyleSheet.create({

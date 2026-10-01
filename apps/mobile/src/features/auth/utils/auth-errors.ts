@@ -60,3 +60,20 @@ export function getDisplayError(error: unknown): string {
   return getAuthErrorMessage(getErrorCode(error));
 }
 
+export function getSignInErrorMessage(cause: unknown): string {
+  const code = getErrorCode(cause) as string;
+  if (code === "email_in_use") return "This email already has an account. Please sign in.";
+  if (code === "invalid_credentials") return "Email or password is incorrect.";
+  if (code === "too_many_attempts") return "Too many attempts. Please try again later.";
+  if (code === "invalid_otp") return "Incorrect or expired code. Please try again.";
+  if (code === "sms_gateway_not_configured") return "SMS gateway setup is incomplete. Please use email or Google for now.";
+  if (code === "account_link_requires_verification") return "This email is already in use. Please contact support to connect your accounts.";
+  if (code === "provider_token_invalid") return "Google could not verify your sign-in. Please select your account again.";
+  if (code === "provider_unavailable") return "Sign-in service is unavailable. Please try again.";
+  if (code === "NETWORK_ERROR") return "Connection lost. Check your internet and try again.";
+  const status = cause && typeof cause === "object" && "status" in cause ? Number(cause.status) : 0;
+  if (status === 404) return "Sign-in is unavailable on this server. Please contact support.";
+  if (status >= 500) return "Sign-in service is unavailable. Please try again later.";
+  return "Sign-in could not be completed. Please try again.";
+}
+
