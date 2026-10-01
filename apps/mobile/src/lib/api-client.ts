@@ -199,9 +199,11 @@ export function createApiClient({
     }
 
     if (!response.ok) {
+      const detail = payload && typeof payload === "object" ? (payload as Record<string, unknown>).message : undefined;
       throw createAuthApiError({
         code: readErrorCode(payload),
         status: response.status,
+        message: response.status >= 400 && response.status < 500 && ![401, 403].includes(response.status) && typeof detail === "string" ? detail : undefined,
       });
     }
 

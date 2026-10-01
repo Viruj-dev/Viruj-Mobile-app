@@ -5,6 +5,14 @@ import * as authApi from "../features/auth/api/auth.api";
 import { apiClient } from "../lib/api-client";
 import * as device from "../features/auth/services/device.service";
 
+test("booking rejection preserves the backend reason without exposing server failures", async () => {
+  for (const [status, expected] of [[422, "Choose a valid future appointment interval"], [409, "Provider already has an active appointment for this slot"], [500, "Something went wrong. Please try again."]] as const) {
+    const message = status === 422 ? "Choose a valid future appointment interval" : status === 409 ? "Provider already has an active appointment for this slot" : "private database details";
+    const client = createApiClient({ baseUrl: "https://backend.test", fetcher: (async () => Response.json({ error: status === 409 ? "conflict" : "validation_error", message }, { status })) as unknown as typeof fetch });
+    await expect(client.request("/api/mobile/appointments", { method: "POST", body: {} })).rejects.toThrow(expected);
+  }
+});
+
 test("requests work when React Native lacks AbortSignal.timeout", async () => {
   const original = Object.getOwnPropertyDescriptor(AbortSignal, "timeout");
   Object.defineProperty(AbortSignal, "timeout", { value: undefined, configurable: true });
