@@ -8,8 +8,8 @@
     "dev:api": "bun --cwd ../viruj-backend run dev:mobile",
     "dev:mobile": "bun --cwd apps/mobile start",
     "dev": "bun run dev:api & bun run dev:mobile",
-    "android": "expo run:android",
-    "ios": "expo run:ios"
+    "android": "bun --cwd apps/mobile run android",
+    "ios": "bun --cwd apps/mobile run ios"
   },
   "devDependencies": {
     "babel-preset-expo": "~54.0.0"
