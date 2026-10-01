@@ -33,6 +33,7 @@ export function useResource<T>(resourcePath: string) {
   const previousPath = useRef(path);
   useEffect(() => {
     const controller = new AbortController();
+      if (!path) { setData(null); setLoading(false); setError("Choose a saved location to see nearby care."); return () => controller.abort(); }
     // Keep cached content visible while refreshing the same resource.
     setLoading(data === null || previousPath.current !== path); setError(""); if (previousPath.current !== path) setData(null); previousPath.current = path;
     api.request<T>(path, { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setData(value); }).catch(e => { if (!controller.signal.aborted) setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });

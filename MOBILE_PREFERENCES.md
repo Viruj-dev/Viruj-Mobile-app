@@ -1,10 +1,10 @@
 # Nearby care and phone alerts
 
-New users choose a saved location before browsing providers. Use current location requests foreground access only; saving keeps coordinates usable with GPS turned off. Manual area search uses the authenticated backend geocoder and never requests GPS access. Settings are stored per account in native secure storage (localStorage for the web preview).
+After successful native login, the phone automatically requests foreground location access and notification access once per account. There is no permission onboarding screen. Granted location access saves the current coordinates automatically; saving keeps coordinates usable with GPS turned off. Manual area search uses the authenticated backend geocoder and never requests GPS access. Settings are stored per account in native secure storage (localStorage for the web preview).
 
 Home, directory lists, department doctors, related doctors and search all use the saved coordinates through the shared resource hook. Choose 5, 10, 25 or 50 km in Location & App Preferences. Clinics now open their own directory. No providers in range shows an empty state; it never expands to the global database automatically.
 
-New users are asked about phone notifications and may choose Maybe later. Settings can request access again or open system settings. Granted access registers the installation with the authenticated backend, retries on app resume and refreshes rotated tokens. Notification taps fetch the owned notification before navigation, including after a cold launch. Sign-out unregisters the installation before clearing credentials; a registration failure is shown when enabling alerts.
+Denied permissions do not block login. Settings can request access again or open system settings. Nearby discovery waits for a saved location and never fetches the global directory when access is denied. Granted access registers the installation with the authenticated backend, retries on app resume and refreshes rotated tokens. Notification taps fetch the owned notification before navigation, including after a cold launch. Sign-out unregisters the installation before clearing credentials; a registration failure is shown when enabling alerts.
 
 Light native haptics run from the root touch listener across app screens, with an 80 ms debounce. Disable Touch feedback in preferences. Web and unsupported devices do not vibrate.
 
@@ -25,3 +25,13 @@ bun run android
 ```
 
 Use `http://127.0.0.1:8081` for Metro over USB. The API can use `http://127.0.0.1:4000` when running locally; forwarding must be repeated after reconnecting the phone. Reinstalling a debug APK with `adb install -r` preserves app data when its package and signing key match.
+
+If Windows reports `ninja: error: manifest 'build.ninja' still dirty after 100 tries` in Google sign-in, use the included Gradle init script to shorten that module's generated C++ paths. From `apps/mobile` after prebuild:
+
+```powershell
+cd android
+.\gradlew.bat :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --init-script ../../../scripts/android-windows.gradle
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The architecture above targets an ARM64 physical phone. Keep Metro running separately with `bun run dev:mobile` from the repository root.

@@ -1,19 +1,22 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { previewEnabled } from "./preview";
 import { isDiscoveryPath, nearbyPath, validSavedLocation, type SavedLocation } from "./device-location";
+import { requestLoginPermissions } from "./device-permissions";
 export type { SavedLocation } from "./device-location";
 
-export type DevicePreferences = { location?: SavedLocation; notificationsAsked?: boolean; haptics?: boolean };
+export type DevicePreferences = { location?: SavedLocation; locationAsked?: boolean; notificationsAsked?: boolean; haptics?: boolean };
 export let hapticsEnabled = true;
-type State = { preferences: DevicePreferences; loading: boolean; error: string; save(value: DevicePreferences): Promise<void>; reload(): void };
+type State = { preferences: DevicePreferences; loading: boolean; error: string; save(value: DevicePreferences | ((current: DevicePreferences) => DevicePreferences)): Promise<void>; reload(): void };
 const Context = createContext<State | null>(null);
 function storageKey(userId: string) { return `viruj.preferences.${userId.split("").map(c => c.charCodeAt(0).toString(16)).join("-")}`; }
 export function DevicePreferencesProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [preferences, setPreferences] = useState<DevicePreferences>({});
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
   const [version, setVersion] = useState(0);
+  const latest = useRef(preferences), prompted = useRef(false);
+  latest.current = preferences;
   const key = storageKey(userId);
   useEffect(() => {
     let active = true;
@@ -30,17 +33,25 @@ export function DevicePreferencesProvider({ userId, children }: { userId: string
     })();
     return () => { active = false; hapticsEnabled = true; };
   }, [key, version]);
-  async function save(value: DevicePreferences) {
+  useEffect(() => {
+    if (loading || error || prompted.current || Platform.OS === "web" || previewEnabled) return;
+    prompted.current = true;
+    let active = true;
+    void requestLoginPermissions(latest.current, save, () => active).catch(() => { if (active) setError("Could not save your device preferences. Please try again."); });
+    return () => { active = false; };
+  }, [loading, error]);
+  async function save(update: DevicePreferences | ((current: DevicePreferences) => DevicePreferences)) {
+    const value = typeof update === "function" ? update(latest.current) : update;
     if (value.location && !validSavedLocation(value.location)) throw new Error("Choose a valid location and radius.");
     const raw = JSON.stringify(value);
     if (Platform.OS === "web") localStorage.setItem(key, raw);
     else await SecureStore.setItemAsync(key, raw);
-    setPreferences(value); hapticsEnabled = value.haptics !== false;
+    latest.current = value; setPreferences(value); hapticsEnabled = value.haptics !== false;
   }
   return <Context.Provider value={{ preferences, loading, error, save, reload: () => setVersion(v => v + 1) }}>{children}</Context.Provider>;
 }
 export function useDevicePreferences() { const value = useContext(Context); if (!value) throw new Error("Device preferences provider missing"); return value; }
 export function useDiscoveryPath(path: string) {
   const state = useContext(Context);
-  return isDiscoveryPath(path) ? nearbyPath(path, state?.preferences.location) : path;
+  return isDiscoveryPath(path) && state ? state.preferences.location ? nearbyPath(path, state.preferences.location) : null : path;
 }
