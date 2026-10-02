@@ -4,7 +4,7 @@ import type { DevicePreferences } from "./device-preferences";
 import { validSavedLocation, type SavedLocation } from "./device-location";
 
 export type DeviceAccess = { location: boolean; notifications: boolean };
-export function canEnterApp(access: DeviceAccess, location?: SavedLocation) { return access.location && access.notifications && validSavedLocation(location); }
+export function canEnterApp(access: DeviceAccess, location?: SavedLocation) { return access.notifications && validSavedLocation(location); }
 
 export async function requestLoginPermissions(
   preferences: DevicePreferences,
@@ -25,11 +25,11 @@ export async function requestLoginPermissions(
   if (!active()) return { location: false, notifications: false };
   await save(current => ({ ...current, locationAsked: true, notificationsAsked: true }));
 
-  if (location.granted && !preferences.location) {
+  if (location.granted && (ask || !preferences.location)) {
     try {
       if (await Location.hasServicesEnabledAsync()) {
-        const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (active()) await save(current => current.location ? current : { ...current, location: { latitude: position.coords.latitude, longitude: position.coords.longitude, radiusKm: 10, label: "Saved current location" } });
+        const position = await Location.getLastKnownPositionAsync({ maxAge: 300000, requiredAccuracy: 5000 }) ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (active()) await save(current => ({ ...current, location: { latitude: position.coords.latitude, longitude: position.coords.longitude, radiusKm: 50, label: "Current location" } }));
       }
     } catch { /* Stay on the access screen until a usable location is saved. */ }
   }

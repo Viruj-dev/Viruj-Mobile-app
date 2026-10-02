@@ -22,7 +22,7 @@ import { api, type CareItem } from "./api";
 import { devAuthBypass } from "./dev-session";
 import { DevicePreferencesProvider, useDevicePreferences } from "./device-preferences";
 import { canEnterApp } from "./device-permissions";
-import { DeviceSettings } from "./device-settings";
+import { ManualLocation } from "./manual-location";
 import { notificationModule, registerPhoneNotifications } from "./device-notifications";
 import { notificationDestination } from "./booking-validation";
 const tabs: { name: string; label: string; icon: Icon }[] = [{ name: "home", label: "Home", icon: "home" }, { name: "health", label: "My Health", icon: "shield-checkmark" }, { name: "chat", label: "Ask AI", icon: "sparkles-outline" }, { name: "community", label: "Community", icon: "people-outline" }, { name: "profile", label: "Profile", icon: "person-circle" }];
@@ -39,9 +39,9 @@ function AccessGate({ children }: { children: ReactNode }) {
   if (loading || checkingAccess) return <Screen title="Setting up Viruj"><ActivityIndicator color={colors.primary} /></Screen>;
   if (error) return <Screen title="Setting up Viruj"><ErrorText message={error} /><Button title="Try again" onPress={reload} /></Screen>;
   if (previewEnabled) return <>{children}</>;
-  if (Platform.OS === "web") return preferences.location ? <>{children}</> : <DeviceSettings back={() => {}} locationOnly />;
-  if (!access.location || !access.notifications) return <Screen title="Allow access"><Body>Viruj needs location and notification access before you can continue.</Body>{!access.location && <Body>Allow location access in your phone settings.</Body>}{!access.notifications && <Body>Allow notifications in your phone settings.</Body>}<Button title="Try permissions again" onPress={() => void requestAccess()} /><Button title="Open phone settings" secondary onPress={() => void Linking.openSettings()} /></Screen>;
-  if (!canEnterApp(access, preferences.location)) return <DeviceSettings back={() => void requestAccess()} locationOnly />;
+  if (Platform.OS === "web") return preferences.location ? <>{children}</> : <ManualLocation />;
+  if (!access.notifications) return <Screen title="Allow notifications"><Body>Viruj needs phone notifications before you can continue.</Body><Button title="Try again" onPress={() => void requestAccess()} /><Button title="Open phone settings" secondary onPress={() => void Linking.openSettings()} /></Screen>;
+  if (!canEnterApp(access, preferences.location)) return <ManualLocation />;
   return <>{children}</>;
 }
 function Workspace({ reviewPages }: { reviewPages: boolean }) {
@@ -92,7 +92,7 @@ function Workspace({ reviewPages }: { reviewPages: boolean }) {
   else if (name === "appointment") screen = <AppointmentDetails key={route!.id} id={route!.id!} back={back} />;
   else if (name === "notifications") screen = <Inbox back={back} navigate={navigate} />;
   else if (name === "edit-profile") screen = <EditProfile back={back} />;
-  else if (name === "device-settings") screen = <DeviceSettings back={back} />;
+  else if (name === "device-settings") screen = <ManualLocation back={back} />;
   else if (name === "feedback") screen = <Feedback back={back} />;
   else if (name === "delete-account") screen = <DeleteAccount back={back} navigate={navigate} />;
   else if (name === "department-doctors") screen = <Care kind="doctors" department={route!.query} back={back} navigate={navigate} />;
