@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
@@ -12,12 +12,12 @@ const mapHtml = (latitude: number, longitude: number) => `<!doctype html><html><
 
 export function ManualLocation({ back }: { back?(): void }) {
   const { preferences, save } = useDevicePreferences();
-  const map = useRef<WebView>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Omit<SavedLocation, "radiusKm">[]>([]);
   const [selected, setSelected] = useState<SavedLocation | undefined>(preferences.location);
   const [busy, setBusy] = useState(false), [error, setError] = useState(""), [mapError, setMapError] = useState(false);
-  const start = preferences.location ?? { latitude: 20.5937, longitude: 78.9629 };
+  const start = useRef(preferences.location ?? { latitude: 20.5937, longitude: 78.9629 }).current;
+  const mapSource = useMemo(() => ({ html: mapHtml(start.latitude, start.longitude), baseUrl: "https://virujhealth.com" }), [start.latitude, start.longitude]);
 
   async function search() {
     if (query.trim().length < 3 || busy) return;
@@ -51,7 +51,7 @@ export function ManualLocation({ back }: { back?(): void }) {
     </View>
     {results.length > 0 && <ScrollView keyboardShouldPersistTaps="always" style={{ maxHeight: 188, backgroundColor: "white" }}>{results.map(place => <Pressable key={`${place.latitude}/${place.longitude}`} accessibilityRole="button" accessibilityLabel={`Use ${place.label}`} onPress={() => void choose({ ...place, radiusKm: 50 })} style={{ minHeight: 54, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, flexDirection: "row", alignItems: "center", gap: 10 }}><Glyph name="location-outline" color={colors.deep} size={18} /><Body style={{ flex: 1 }} numberOfLines={2}>{place.label}</Body></Pressable>)}</ScrollView>}
     <View style={{ flex: 1, backgroundColor: "#E9ECE8" }}>
-      {Platform.OS !== "web" && !mapError ? <WebView ref={map} originWhitelist={["*"]} source={{ html: mapHtml(start.latitude, start.longitude), baseUrl: "https://virujhealth.com" }} userAgent="VirujHealth/1.0 (https://virujhealth.com)" onMessage={mapMoved} onError={() => setMapError(true)} startInLoadingState renderLoading={() => <ActivityIndicator color={colors.primary} style={{ flex: 1 }} />} style={{ flex: 1 }} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Body style={{ textAlign: "center" }}>Map unavailable. Search an area above to set your location.</Body></View>}
+      {Platform.OS !== "web" && !mapError ? <WebView originWhitelist={["*"]} source={mapSource} userAgent="VirujHealth/1.0 (https://virujhealth.com)" onMessage={mapMoved} onError={() => setMapError(true)} startInLoadingState renderLoading={() => <ActivityIndicator color={colors.primary} style={{ flex: 1 }} />} style={{ flex: 1 }} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Body style={{ textAlign: "center" }}>Map unavailable. Search an area above to set your location.</Body></View>}
       {Platform.OS !== "web" && !mapError && <View pointerEvents="none" style={{ position: "absolute", top: "50%", left: "50%", marginLeft: -22, marginTop: -42, alignItems: "center" }}><Glyph name="location" color={colors.deep} size={44} /></View>}
     </View>
     <View style={{ padding: 20, gap: 10, backgroundColor: "white" }}><Body>{selected ? selected.label : "Move the map pin or search for your area."}</Body><Body style={{ fontSize: 12 }}>Showing care within 50 km of this location</Body><ErrorText message={error} /><Button title="Use this location" disabled={!selected || busy} busy={busy} onPress={() => selected && void choose(selected)} /></View>

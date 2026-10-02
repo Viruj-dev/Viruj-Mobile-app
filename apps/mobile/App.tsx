@@ -4,7 +4,7 @@ import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "./src/product/session";
 import { PatientApp } from "./src/product/app";
-import { touchFeedback } from "./src/product/device-haptics";
+import { tapFeedbackHandlers } from "./src/product/device-haptics";
 
 import "./global.css";
 
@@ -12,7 +12,7 @@ export default function App() {
   const [fontsLoaded, fontError] = useFonts({ Merienda: require("./assets/fonts/Merienda.ttf") });
   if (!fontsLoaded && !fontError) return <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color="#991B1B" /></View>;
   return (
-    <View style={{ flex: 1 }} onTouchStart={touchFeedback}>
+    <View style={{ flex: 1 }} {...tapFeedbackHandlers}>
       <SafeAreaProvider>
         <PaperProvider>
           <SessionProvider>
