@@ -28,4 +28,4 @@ export function AuthIntro({ complete }: { complete(): void }) {
     <View style={{ paddingHorizontal: 40, paddingBottom: 32, paddingTop: 12 }}><Pressable accessibilityRole="button" onPress={next} style={{ backgroundColor: "#7F1D1D", borderRadius: 16, paddingVertical: 20, alignItems: "center" }}><Text style={[styles.text, { color: "white", fontSize: 14, letterSpacing: 2.8 }]}>{index === 2 ? "GET STARTED" : "CONTINUE"}</Text></Pressable></View>
   </View></SafeAreaView>;
 }
-const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: "white" }, text: { fontFamily: "Merienda", textAlign: "center", color: "#6B7280" } });
+const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: "white" }, text: { textAlign: "center", color: "#6B7280" } });

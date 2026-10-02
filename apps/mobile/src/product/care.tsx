@@ -857,7 +857,6 @@ export function Choices({
         >
           <Text
             style={{
-              fontFamily: "Merienda",
               fontSize: 12,
               color: value === option ? "white" : colors.muted,
             }}
