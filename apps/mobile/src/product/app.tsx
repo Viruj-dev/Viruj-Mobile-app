@@ -4,8 +4,8 @@ import { Privacy, PublicDeletion } from "./legal";
 import { Setup } from "./setup";
 import { Reports } from "./reports";
 import { BlurView } from "expo-blur";
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, AppState, BackHandler, Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { ActivityIndicator, AppState, BackHandler, Linking, Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthScreen } from "./auth-screen";
 import { Care, CareDetail } from "./care";
@@ -21,6 +21,7 @@ import { previewEnabled } from "./preview";
 import { api, type CareItem } from "./api";
 import { devAuthBypass } from "./dev-session";
 import { DevicePreferencesProvider, useDevicePreferences } from "./device-preferences";
+import { canEnterApp } from "./device-permissions";
 import { DeviceSettings } from "./device-settings";
 import { notificationModule, registerPhoneNotifications } from "./device-notifications";
 import { notificationDestination } from "./booking-validation";
@@ -31,7 +32,17 @@ export function PatientApp() {
   if (loading) return <Screen title="Viruj Health"><ActivityIndicator color={colors.primary} /></Screen>;
   if (!session && error) return <Screen title="Connection unavailable"><ErrorText message={error} /><Button title="Try again" onPress={() => void restore()} /><Button title="Sign in with another account" secondary onPress={() => void logout().catch(() => {})} /></Screen>;
   if (!session) return <View style={{ flex: 1 }}><AuthScreen />{__DEV__ && process.env.EXPO_PUBLIC_ENABLE_UI_PREVIEW === "true" && <View style={{ padding: 12, backgroundColor: colors.bg }}><Button title="Sample data preview (offline)" secondary onPress={() => { setReviewPages(false); preview(); }} /><Button title="Review all web app pages" secondary onPress={() => { setReviewPages(true); preview(); }} /></View>}</View>;
-  return <View style={{ flex: 1 }}>{devAuthBypass && <View style={{ padding: 8, backgroundColor: "#FEF3C7" }}><Body>Development test session · Live backend data</Body></View>}<DevicePreferencesProvider key={session.user.id} userId={session.user.id}>{session.user.onboardingCompleted !== true ? <Setup back={() => {}} /> : <Workspace reviewPages={reviewPages} />}</DevicePreferencesProvider></View>;
+  return <View style={{ flex: 1 }}>{devAuthBypass && <View style={{ padding: 8, backgroundColor: "#FEF3C7" }}><Body>Development test session · Live backend data</Body></View>}<DevicePreferencesProvider key={session.user.id} userId={session.user.id}><AccessGate>{session.user.onboardingCompleted !== true ? <Setup back={() => {}} /> : <Workspace reviewPages={reviewPages} />}</AccessGate></DevicePreferencesProvider></View>;
+}
+function AccessGate({ children }: { children: ReactNode }) {
+  const { preferences, loading, error, access, checkingAccess, requestAccess, reload } = useDevicePreferences();
+  if (loading || checkingAccess) return <Screen title="Setting up Viruj"><ActivityIndicator color={colors.primary} /></Screen>;
+  if (error) return <Screen title="Setting up Viruj"><ErrorText message={error} /><Button title="Try again" onPress={reload} /></Screen>;
+  if (previewEnabled) return <>{children}</>;
+  if (Platform.OS === "web") return preferences.location ? <>{children}</> : <DeviceSettings back={() => {}} locationOnly />;
+  if (!access.location || !access.notifications) return <Screen title="Allow access"><Body>Viruj needs location and notification access before you can continue.</Body>{!access.location && <Body>Allow location access in your phone settings.</Body>}{!access.notifications && <Body>Allow notifications in your phone settings.</Body>}<Button title="Try permissions again" onPress={() => void requestAccess()} /><Button title="Open phone settings" secondary onPress={() => void Linking.openSettings()} /></Screen>;
+  if (!canEnterApp(access, preferences.location)) return <DeviceSettings back={() => void requestAccess()} locationOnly />;
+  return <>{children}</>;
 }
 function Workspace({ reviewPages }: { reviewPages: boolean }) {
   const { loading, error, reload } = useDevicePreferences();
