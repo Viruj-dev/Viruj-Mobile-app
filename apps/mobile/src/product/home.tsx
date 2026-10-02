@@ -6,25 +6,26 @@ import { SearchResults } from "./care";
 import { useSession } from "./session";
 import { Empty, Glyph, ResourceState, useResource } from "./ui";
 import { useDevicePreferences } from "./device-preferences";
+import { departmentIcon } from "./department-icons";
 
 export type Destination = { name: string; id?: string; kind?: string; query?: string; providerId?: string; practiceId?: string };
 export type Navigate = (destination: Destination) => void;
 function Text(props: TextProps) { return <NativeText {...props} style={[{ fontFamily: "Merienda" }, props.style]} />; }
 const concerns = [
-  ["Surgery", "bandage", "#FEF2F2", "#FECACA", "#991B1B"],
-  ["Cardiac Sciences", "heart-pulse", "#FFF1F2", "#FECDD3", "#9F1239"],
-  ["Neurosciences", "brain", "#FDF2F8", "#FBCFE8", "#9D174D"],
-  ["Orthopaedics", "bone", "#FEE2E2", "#FCA5A5", "#7F1D1D"],
-  ["Internal Medicine", "stethoscope", "#EFF6FF", "#BFDBFE", "#1E40AF"],
-  ["Women & Child Health", "human-female", "#FAF5FF", "#E9D5FF", "#6B21A8"],
-  ["Oncology", "pill", "#FFF7ED", "#FED7AA", "#9A3412"],
-  ["Diagnostics & Imaging", "eye-outline", "#F0FDFA", "#99F6E4", "#115E59"],
-  ["Urology & Nephrology", "hand-heart-outline", "#ECFEFF", "#A5F3FC", "#155E75"],
-  ["ENT", "stethoscope", "#EEF2FF", "#C7D2FE", "#3730A3"],
-  ["Dermatology", "bandage", "#F5F3FF", "#DDD6FE", "#5B21B6"],
-  ["Psychiatry", "head-cog-outline", "#FFFBEB", "#FDE68A", "#92400E"],
-  ["Dental Sciences", "tooth-outline", "#F7FEE7", "#D9F99D", "#3F6212"],
-  ["Emergency & Critical Care", "ambulance", "#FEF2F2", "#FECACA", "#991B1B"],
+  ["Surgery", "#FEF2F2", "#FECACA", "#991B1B"],
+  ["Cardiac Sciences", "#FFF1F2", "#FECDD3", "#9F1239"],
+  ["Neurosciences", "#FDF2F8", "#FBCFE8", "#9D174D"],
+  ["Orthopaedics", "#FEE2E2", "#FCA5A5", "#7F1D1D"],
+  ["Internal Medicine", "#EFF6FF", "#BFDBFE", "#1E40AF"],
+  ["Women & Child Health", "#FAF5FF", "#E9D5FF", "#6B21A8"],
+  ["Oncology", "#FFF7ED", "#FED7AA", "#9A3412"],
+  ["Diagnostics & Imaging", "#F0FDFA", "#99F6E4", "#115E59"],
+  ["Urology & Nephrology", "#ECFEFF", "#A5F3FC", "#155E75"],
+  ["ENT", "#EEF2FF", "#C7D2FE", "#3730A3"],
+  ["Dermatology", "#F5F3FF", "#DDD6FE", "#5B21B6"],
+  ["Psychiatry", "#FFFBEB", "#FDE68A", "#92400E"],
+  ["Dental Sciences", "#F7FEE7", "#D9F99D", "#3F6212"],
+  ["Emergency & Critical Care", "#FEF2F2", "#FECACA", "#991B1B"],
 ] as const;
 const services = [
   { label: "Doctors", kind: "doctors", image: require("../../assets/web/doctor.png"), bg: "#F5F9FF", border: "#DBEAFE" },
@@ -63,7 +64,7 @@ export function Home({ navigate }: { navigate: Navigate }) {
       <View style={h.content}>
         <View style={{ gap: 16, paddingVertical: 8 }}>
           <Text style={h.pill}>Select Your Health Concern</Text>
-          <View style={h.grid}>{departments.slice(0, expanded ? departments.length : 8).map(({ name, slug }, index) => <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} onPress={() => navigate({ name: "department-doctors", query: slug })} style={[h.concern, { backgroundColor: concerns[index % concerns.length]![2] }]}><View style={[h.circle, { backgroundColor: concerns[index % concerns.length]![3] }]}><Glyph name="medical-outline" color="#7C1117" size={28} /></View><Text style={h.concernLabel}>{name}</Text></Pressable>)}</View>
+          <View style={h.grid}>{departments.slice(0, expanded ? departments.length : 8).map(({ name, slug }, index) => <Pressable key={name} accessibilityRole="button" accessibilityLabel={name} onPress={() => navigate({ name: "department-doctors", query: slug })} style={[h.concern, { backgroundColor: concerns[index % concerns.length]![1] }]}><View style={[h.circle, { backgroundColor: concerns[index % concerns.length]![2] }]}><Glyph name={departmentIcon(name)} color={concerns[index % concerns.length]![3]} size={28} /></View><Text style={h.concernLabel}>{name}</Text></Pressable>)}</View>
           {departments.length > 8 && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(!expanded)} style={h.more}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Glyph name={expanded ? "remove" : "add"} size={20} color="#374151" /><Text style={{ fontSize: 14, fontWeight: "700", color: "#374151" }}>{expanded ? "Fewer Departments" : `More Departments (${departments.length - 8})`}</Text></View><Glyph name={expanded ? "chevron-up" : "chevron-down"} size={20} color="#4B5563" /></Pressable>}
         </View>
         <View style={{ gap: 8 }}><Text style={h.pill}>Discounts & Offers</Text><View style={[h.banner, { height: 140 }]}><Image source={banners[banner]} accessibilityLabel={`Hospital offer ${banner + 1}`} style={{ width: "100%", height: "100%" }} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Previous offer" onPress={() => changeBanner(-1)} style={[h.arrow, { left: 8 }]}><Glyph name="chevron-back" color="#374151" /></Pressable><Pressable accessibilityRole="button" accessibilityLabel="Next offer" onPress={() => changeBanner(1)} style={[h.arrow, { right: 8 }]}><Glyph name="chevron-forward" color="#374151" /></Pressable></View></View>
