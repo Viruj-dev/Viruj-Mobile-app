@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, Linking, Platform, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from "expo-audio";
 import { File } from "expo-file-system";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { api } from "./api";
@@ -16,21 +16,22 @@ export async function pickImage() {
 }
 export function VoiceInput({ onText, disabled, onRecording }: { onText(value: string): void; disabled?: boolean; onRecording?(): void }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const state = useAudioRecorderState(recorder);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [denied, setDenied] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const recordingRef = useRef(false);
   const stopAtLimit = useRef<() => void>(() => {});
-  useEffect(() => () => { if (recorder.isRecording) void recorder.stop().finally(() => setAudioModeAsync({ allowsRecording: false })).catch(() => {}); }, [recorder]);
-  useEffect(() => { if (!state.isRecording) return; const timer = setTimeout(() => stopAtLimit.current(), 60_000); return () => clearTimeout(timer); }, [state.isRecording]);
+  useEffect(() => () => { if (recordingRef.current) void recorder.stop().catch(() => {}); void setAudioModeAsync({ allowsRecording: false }).catch(() => {}); }, [recorder]);
+  useEffect(() => { if (!recording) return; const timer = setTimeout(() => stopAtLimit.current(), 60_000); return () => clearTimeout(timer); }, [recording]);
   async function toggle() {
     if (busy) return; setBusy(true); setError("");
     try {
-      if (!state.isRecording) {
+      if (!recordingRef.current) {
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) { setDenied(true); setError("Microphone access is off. You can type instead."); return; }
         setDenied(false); onRecording?.(); await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-        await recorder.prepareToRecordAsync(); recorder.record();
+        await recorder.prepareToRecordAsync(); recorder.record(); recordingRef.current = true; setRecording(true);
       } else {
-        await recorder.stop(); await setAudioModeAsync({ allowsRecording: false });
+        await recorder.stop(); recordingRef.current = false; setRecording(false); await setAudioModeAsync({ allowsRecording: false });
         const uri = recorder.uri; if (!uri) throw new Error("No recording found.");
         const form = new FormData();
         if (Platform.OS === "web") form.append("file", await (await fetch(uri)).blob(), "recording.webm");
@@ -38,10 +39,10 @@ export function VoiceInput({ onText, disabled, onRecording }: { onText(value: st
         try { const result = await api.request<{ text: string }>("/ai/transcribe", { method: "POST", body: form }); if (!result.text.trim()) throw new Error("I couldn’t hear any words. Please try again."); onText(result.text); }
         finally { if (Platform.OS !== "web") { const file = new File(uri); if (file.exists) file.delete(); } }
       }
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not record."); } finally { setBusy(false); }
+    } catch (e) { recordingRef.current = false; setRecording(false); setError(e instanceof Error ? e.message : "Could not record."); } finally { setBusy(false); }
   }
   stopAtLimit.current = () => { void toggle(); };
-  return <View style={{ gap: 6 }}><Button title={state.isRecording ? "Finish speaking" : "Tap to talk"} icon={state.isRecording ? "stop" : "mic-outline"} busy={busy} disabled={disabled} onPress={() => void toggle()} /><Body style={{ fontSize: 11, textAlign: "center" }}>Your recording is sent for transcription when you finish.</Body><ErrorText message={error} />{denied && <Button title="Open settings" secondary onPress={() => void Linking.openSettings()} />}</View>;
+  return <View style={{ gap: 6 }}><Button title={recording ? "Finish speaking" : "Tap to talk"} icon={recording ? "stop" : "mic-outline"} busy={busy} disabled={disabled} onPress={() => void toggle()} /><Body style={{ fontSize: 11, textAlign: "center" }}>Your recording is sent for transcription when you finish.</Body><ErrorText message={error} />{denied && <Button title="Open settings" secondary onPress={() => void Linking.openSettings()} />}</View>;
 }
 
 export type SelectedMedia = { uri: string; type: "image" | "video" };
