@@ -4,32 +4,66 @@ import * as Speech from "expo-speech";
 import { previewEnabled } from "./preview";
 import { SearchInput } from "./care";
 import { IconAction } from "./web-controls";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDevicePreferences } from "./device-preferences";
 import { Image, Modal, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 import { api, type ChatSession, type Message } from "./api";
 import { pickImage, VoiceInput } from "./media";
 import { Body, Button, Card, colors, Empty, ErrorText, Field, Heading, ResourceState, Screen, Glyph, useResource, useBack } from "./ui";
+type Booking = { token: string; doctorName: string; specialty: string; practiceName: string; startsAt: string; timezone: string };
+type Reply = { response: string; sessionId: string; suggestedTitle?: string; report?: MedicalReport; booking?: Booking; historySaved?: boolean; recommendations?: { id: number; name: string; specialty: string; distanceKm?: number }[] };
+const confirmsBooking = (text: string) => /^(?:yes[, ]+)?(?:book (?:it|this|this slot|the appointment)|confirm (?:booking|the booking)|please book it|हाँ बुक कर दो|बुक कर दो)[.!?\s]*$/i.test(text.trim());
 export function Chat({ back }: { back(): void }) {
-  const [report, setReport] = useState<MedicalReport>(); const [messages, setMessages] = useState<Message[]>([]); const [text, setText] = useState(""); const [sessionId, setSessionId] = useState<string>(); const [title, setTitle] = useState("New conversation");
-  const [history, setHistory] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [saveError, setSaveError] = useState("");
-  const [settings, setSettings] = useState(false);
-  const [image, setImage] = useState<string>();
-  async function attach() { try { const selected = await pickImage(); if (selected) setImage(selected.base64); } catch (e) { setError(e instanceof Error ? e.message : "Could not select image."); } }
-  async function send(override?: string, regenerate = false) {
-    if (busy || !(override || text.trim() || image)) return;
-    setBusy(true); setError(""); setSaveError("");
-    const prompt = override || text.trim();
-    const lastUser = messages.map(m => m.sender).lastIndexOf("user");
-    const base = regenerate && lastUser >= 0 ? messages.slice(0, lastUser) : messages;
+  const { preferences } = useDevicePreferences();
+  const [messages, setMessages] = useState<Message[]>([]), [text, setText] = useState("");
+  const [sessionId, setSessionId] = useState<string>(), [report, setReport] = useState<MedicalReport>();
+  const [booking, setBooking] = useState<Booking>(), [recommendations, setRecommendations] = useState<Reply["recommendations"]>([]);
+  const [image, setImage] = useState<string>(), [history, setHistory] = useState(false);
+  const [busy, setBusy] = useState(false), [error, setError] = useState(""), [readAloud, setReadAloud] = useState(true);
+  const locked = useRef(false), scroll = useRef<ScrollView>(null);
+  useEffect(() => () => { void Speech.stop(); }, []);
+  useBack(history, () => setHistory(false));
+  function reset() { void Speech.stop(); setMessages([]); setSessionId(undefined); setText(""); setImage(undefined); setReport(undefined); setBooking(undefined); setRecommendations([]); setError(""); }
+  async function attach() { try { const value = await pickImage(); if (value) setImage(value.base64); } catch(e) { setError(e instanceof Error ? e.message : "Could not select image."); } }
+  async function send(override?: string, regenerate = false, voice = false) {
+    const prompt = override ?? text.trim();
+    if (locked.current || (!prompt && !image)) return;
+    locked.current = true; setBusy(true); setError(""); void Speech.stop();
+    const location = preferences.location;
     try {
-      const result = await api.request<{ response: string; sessionId: string; suggestedTitle?: string; report?: MedicalReport }>("/ai/chat", { method: "POST", body: { message: prompt, history: base.slice(-20), sessionId, image } });
-      const updated: Message[] = [...base, { sender: "user", text: prompt, image }, { sender: "ai", text: result.response }];
-      setReport(result.report); setMessages(updated); setText(""); setImage(undefined); setSessionId(result.sessionId); const nextTitle = result.suggestedTitle || title; setTitle(nextTitle);
-      try { await api.request("/ai/sessions", { method: "POST", body: { sessionId: result.sessionId, title: nextTitle, preview: result.response.slice(0, 100), messages: updated } }); } catch { setSaveError("Reply received. Could not save conversation history."); }
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not send."); } finally { setBusy(false); }
+      const result = await api.request<Reply>("/ai/chat", { method: "POST", body: { message: prompt, sessionId, image, regenerate, bookingToken: !regenerate && booking && confirmsBooking(prompt) ? booking.token : undefined, location: location ? { latitude: location.latitude, longitude: location.longitude, radiusKm: location.radiusKm } : undefined } });
+      const lastUser = messages.map(m => m.sender).lastIndexOf("user");
+      const base = regenerate && lastUser >= 0 ? messages.slice(0, lastUser) : messages;
+      setMessages([...base, { sender: "user", text: prompt || "Attached a photo", image }, { sender: "ai", text: result.response }]);
+      setSessionId(result.sessionId); setText(""); setImage(undefined); setReport(result.report); setBooking(result.booking); setRecommendations(result.recommendations || []);
+      if (result.historySaved === false) setError("Appointment submitted. Conversation history could not be updated; check Appointments for its status.");
+      if (voice && readAloud) {
+        const slot = result.booking;
+        const spoken = result.response + (slot ? ` Next available slot with ${slot.doctorName}: ${new Date(slot.startsAt).toLocaleString("en-IN", { timeZone: slot.timezone })}. Say book it to request this slot.` : "");
+        Speech.speak(spoken, { onError: () => setError("Reply received. Could not read it aloud.") });
+      }
+    } catch(e) { setError(e instanceof Error ? e.message : "Could not send. Please retry."); if (voice) setText(prompt); }
+    finally { locked.current = false; setBusy(false); }
   }
-  useBack(history || settings, () => { setHistory(false); setSettings(false); });
-  return <Screen title="AI Assistant" back={back} scroll={false} right={<View style={{ flexDirection: "row" }}>{messages.length > 0 && <IconAction label="New Chat" icon="add" color="white" onPress={() => { setReport(undefined); setMessages([]); setSessionId(undefined); setText(""); setImage(undefined); }} />}<IconAction label="Chat History" icon="menu" color="white" onPress={() => setHistory(true)} /></View>}><View style={{ flex: 1, backgroundColor: "white" }}><ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 160, gap: 20 }} keyboardShouldPersistTaps="handled">{messages.length === 0 && <View style={{ paddingTop: 32, gap: 16 }}><View style={{ alignItems: "center", gap: 24, marginBottom: 48 }}><Body style={{ backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FEE2E2", borderRadius: 24, paddingHorizontal: 16, paddingVertical: 8, color: "#DC2626", fontSize: 12 }}>✧ AI Medical Assistant</Body><Heading style={{ fontSize: 36, fontWeight: "700", textAlign: "center", letterSpacing: -1 }}>How can I help you today?</Heading><Body style={{ fontSize: 16, textAlign: "center", color: "#71717A" }}>Get instant medical insights, find specialists, and receive personalized health reports</Body></View><Body style={{ fontSize: 12, letterSpacing: 1, color: "#A1A1AA" }}>TRY ASKING</Body>{["What are the symptoms of diabetes?", "How can I manage stress and anxiety?", "Tell me about hypertension treatment", "How can I improve my sleep quality?"].map(prompt => <Pressable key={prompt} accessibilityRole="button" disabled={busy} onPress={() => void send(prompt)} style={{ borderRadius: 16, borderWidth: 1, borderColor: "#E4E4E7", paddingHorizontal: 24, paddingVertical: 16 }}><Body style={{ color: "#3F3F46" }}>{prompt}</Body></Pressable>)}</View>}{messages.map((message, i) => <View key={i} style={{ alignItems: message.sender === "user" ? "flex-end" : "flex-start", gap: 8 }}><View style={{ borderWidth: 1, borderColor: "#F4F4F5", borderRadius: 16, paddingHorizontal: 20, paddingVertical: 14, maxWidth: "85%", gap: 12 }}>{message.image && <Image source={{ uri: `data:image/jpeg;base64,${message.image}` }} style={{ width: 200, height: 160, borderRadius: 12 }} />}<Text selectable style={{ fontSize: 14, lineHeight: 22, color: "#18181B" }}>{message.text}</Text></View>{message.sender === "ai" && <View style={{ flexDirection: "row" }}><IconAction icon="copy-outline" label="Copy message" onPress={() => { void Clipboard.setStringAsync(message.text).catch(() => setError("Could not copy message.")); }} /><IconAction icon="volume-high-outline" label="Listen to message" onPress={() => { void Speech.stop(); Speech.speak(message.text, { onError: () => setError("Could not play this message.") }); }} />{i === messages.length - 1 && <IconAction icon="refresh" label="Regenerate response" onPress={() => { const prompt = [...messages].reverse().find(m => m.sender === "user")?.text; if (prompt) void send(prompt, true); }} />}</View>}</View>)}{report && <MedicalReportCard report={report} />}{busy && <Body>••• Thinking...</Body>}<ErrorText message={error || saveError} /></ScrollView><View style={{ position: "absolute", left: 16, right: 16, bottom: 24, gap: 12 }}>{image && <View style={{ width: 96 }}><Image source={{ uri: `data:image/jpeg;base64,${image}` }} style={{ width: 96, height: 96, borderRadius: 22 }} /><IconAction label="Remove image" icon="close" onPress={() => setImage(undefined)} /></View>}{settings && <VoiceInput disabled={busy} onText={value => { setText(value); setSettings(false); }} />}<View style={{ borderWidth: 1, borderColor: "#E4E4E7", backgroundColor: "white", borderRadius: 32, padding: 8, flexDirection: "row", alignItems: "center" }}><IconAction label="Upload Image" icon="image-outline" onPress={() => void attach()} /><IconAction label="Voice Command" icon="mic-outline" onPress={() => setSettings(!settings)} /><TextInput accessibilityLabel="Message Viruj AI" placeholder={busy ? "Viruj AI is thinking..." : "Message Viruj AI..."} value={text} onChangeText={setText} onSubmitEditing={() => void send()} editable={!busy} style={{ flex: 1, minWidth: 0, minHeight: 48, fontSize: 16 }} /><IconAction label="Send" icon="send-outline" color={text || image ? "#DC2626" : "#D4D4D8"} onPress={() => void send()} /></View></View></View><Modal visible={history} transparent animationType="fade" onRequestClose={() => setHistory(false)}><View style={{ flex: 1, backgroundColor: "#0000004D", flexDirection: "row", justifyContent: "flex-end" }}><Pressable accessibilityLabel="Close Chat History" onPress={() => setHistory(false)} style={{ flex: 1 }} /><View style={{ width: 320, maxWidth: "90%", backgroundColor: "white", paddingTop: 24 }}><History back={() => setHistory(false)} newChat={() => { setReport(undefined); setMessages([]); setSessionId(undefined); setHistory(false); }} select={item => { setMessages(item.messages); setSessionId(item.id); setTitle(item.title); setHistory(false); }} /></View></View></Modal></Screen>;
+  return <Screen title="Talk to Viruj" back={back} scroll={false} right={<View style={{ flexDirection: "row" }}><IconAction label="New conversation" icon="add" color="white" onPress={() => { if (!busy) reset(); }} /><IconAction label="Conversation history" icon="time-outline" color="white" onPress={() => { if (!busy) setHistory(true); }} /></View>}>
+    <View style={{ flex: 1, backgroundColor: "#FAF8F6" }}>
+      <ScrollView ref={scroll} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 18 }}>
+        {!messages.length && <View style={{ paddingVertical: 24, gap: 16 }}><Heading style={{ fontSize: 30 }}>Tell me what’s bothering you</Heading><Body>Talk in your own words. I can help you understand symptoms, find nearby care, and request an appointment.</Body><Body style={{ fontSize: 12 }}>I’m an AI health assistant. For urgent symptoms, seek emergency care.</Body>{["I have had a fever for two days. Find a doctor near me.", "Help me understand my medical report", "How can I manage my health condition?"].map(prompt => <Button key={prompt} title={prompt} secondary disabled={busy} onPress={() => void send(prompt)} />)}</View>}
+        {messages.map((message, index) => <View key={index} style={{ alignItems: message.sender === "user" ? "flex-end" : "flex-start", gap: 6 }}><View style={{ maxWidth: "94%", borderRadius: 18, padding: 16, backgroundColor: message.sender === "user" ? "#FCECEA" : "white", gap: 10 }}>{message.image && <Image source={{ uri: `data:image/jpeg;base64,${message.image}` }} style={{ width: 200, height: 160, borderRadius: 12 }} />}<Text selectable style={{ color: "#292524", fontSize: 17, lineHeight: 26 }}>{message.text}</Text></View>{message.sender === "ai" && <View style={{ flexDirection: "row" }}><IconAction label="Listen to reply" icon="volume-high-outline" onPress={() => { void Speech.stop(); Speech.speak(message.text); }} /><IconAction label="Copy reply" icon="copy-outline" onPress={() => { void Clipboard.setStringAsync(message.text).catch(() => setError("Could not copy.")); }} />{index === messages.length - 1 && <IconAction label="Try another response" icon="refresh" onPress={() => { const prompt = [...messages].reverse().find(m => m.sender === "user")?.text; if (prompt && !busy) void send(prompt, true); }} />}</View>}</View>)}
+        {!booking && recommendations?.map(doctor => <Card key={doctor.id}><Heading>{doctor.name}</Heading><Body>{doctor.specialty}{doctor.distanceKm !== undefined ? ` · ${doctor.distanceKm} km away` : ""}</Body><Body>No available booking slot found in the next seven days. Browse Care for other times.</Body></Card>)}
+        {booking && <Card><Body>Next available appointment</Body><Heading>{booking.doctorName}</Heading><Body>{booking.specialty} · {booking.practiceName}</Body><Heading style={{ fontSize: 18 }}>{new Date(booking.startsAt).toLocaleString("en-IN", { timeZone: booking.timezone })}</Heading><Body>Say “book it” or tap below. The clinic may need to approve your request.</Body><Button title="Book this slot" disabled={busy} onPress={() => void send("Book this slot")} /></Card>}
+        {report && <MedicalReportCard report={report} />}
+        {busy && <Body>Viruj is listening to your concern…</Body>}<ErrorText message={error} />
+      </ScrollView>
+      <View style={{ padding: 16, gap: 10, borderTopWidth: 1, borderColor: "#EEE1DE", backgroundColor: "white" }}>
+        {image && <View style={{ flexDirection: "row", alignItems: "center" }}><Image source={{ uri: `data:image/jpeg;base64,${image}` }} style={{ width: 56, height: 56, borderRadius: 12 }} /><IconAction label="Remove image" icon="close" onPress={() => setImage(undefined)} /></View>}
+        <VoiceInput disabled={busy} onText={value => { void send(value, false, true); }} onRecording={() => { void Speech.stop(); }} />
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: readAloud }} onPress={() => { setReadAloud(!readAloud); void Speech.stop(); }}><Body style={{ fontSize: 12, textAlign: "center" }}>Read voice replies aloud: {readAloud ? "On" : "Off"}</Body></Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><IconAction label="Attach a photo" icon="image-outline" onPress={() => { if (!busy) void attach(); }} /><TextInput accessibilityLabel="Tell Viruj how you feel" placeholder="Or type here…" value={text} onChangeText={setText} editable={!busy} onSubmitEditing={() => void send()} style={{ flex: 1, minHeight: 48, fontSize: 16 }} /><Button title="Send" disabled={busy || (!text.trim() && !image)} onPress={() => void send()} /></View>
+      </View>
+    </View>
+    <Modal visible={history} animationType="slide" onRequestClose={() => setHistory(false)}><History back={() => setHistory(false)} newChat={() => { reset(); setHistory(false); }} select={item => { reset(); setMessages(item.messages); setSessionId(item.id); setHistory(false); }} /></Modal>
+  </Screen>;
 }
 
 function History({ back, select, newChat }: { back(): void; select(item: ChatSession): void; newChat(): void }) {

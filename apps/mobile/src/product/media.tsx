@@ -14,7 +14,7 @@ export async function pickImage() {
   if (!asset?.base64 || asset.base64.length > 6_800_000) throw new Error("Choose an image under 5 MB.");
   return { uri: asset.uri, base64: asset.base64, dataUrl: `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}` };
 }
-export function VoiceInput({ onText, disabled }: { onText(value: string): void; disabled?: boolean }) {
+export function VoiceInput({ onText, disabled, onRecording }: { onText(value: string): void; disabled?: boolean; onRecording?(): void }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const state = useAudioRecorderState(recorder);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [denied, setDenied] = useState(false);
@@ -25,7 +25,7 @@ export function VoiceInput({ onText, disabled }: { onText(value: string): void; 
       if (!state.isRecording) {
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) { setDenied(true); setError("Microphone access is off. You can type instead."); return; }
-        setDenied(false); await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+        setDenied(false); onRecording?.(); await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         await recorder.prepareToRecordAsync(); recorder.record({ forDuration: 60 });
       } else {
         await recorder.stop(); await setAudioModeAsync({ allowsRecording: false });
@@ -33,12 +33,12 @@ export function VoiceInput({ onText, disabled }: { onText(value: string): void; 
         const form = new FormData();
         if (Platform.OS === "web") form.append("file", await (await fetch(uri)).blob(), "recording.webm");
         else form.append("file", { uri, name: "recording.m4a", type: "audio/mp4" } as unknown as Blob);
-        try { const result = await api.request<{ text: string }>("/ai/transcribe", { method: "POST", body: form }); onText(result.text); }
+        try { const result = await api.request<{ text: string }>("/ai/transcribe", { method: "POST", body: form }); if (!result.text.trim()) throw new Error("I couldn’t hear any words. Please try again."); onText(result.text); }
         finally { if (Platform.OS !== "web") { const file = new File(uri); if (file.exists) file.delete(); } }
       }
     } catch (e) { setError(e instanceof Error ? e.message : "Could not record."); } finally { setBusy(false); }
   }
-  return <View style={{ gap: 10 }}><Body>Voice is sent to Viruj’s transcription provider when you stop recording.</Body><Button title={state.isRecording ? "Stop & transcribe" : "Use voice"} icon={state.isRecording ? "stop" : "mic-outline"} secondary busy={busy} disabled={disabled} onPress={() => void toggle()} /><ErrorText message={error} />{denied && <Button title="Open settings" secondary onPress={() => void Linking.openSettings()} />}</View>;
+  return <View style={{ gap: 6 }}><Button title={state.isRecording ? "Finish speaking" : "Tap to talk"} icon={state.isRecording ? "stop" : "mic-outline"} busy={busy} disabled={disabled} onPress={() => void toggle()} /><Body style={{ fontSize: 11, textAlign: "center" }}>Your recording is sent for transcription when you finish.</Body><ErrorText message={error} />{denied && <Button title="Open settings" secondary onPress={() => void Linking.openSettings()} />}</View>;
 }
 
 export type SelectedMedia = { uri: string; type: "image" | "video" };
