@@ -11,7 +11,7 @@ import { api, type ChatSession, type Message } from "./api";
 import { pickImage, VoiceInput } from "./media";
 import { Body, Button, Card, colors, Empty, ErrorText, Field, Heading, ResourceState, Screen, Glyph, useResource, useBack } from "./ui";
 type Booking = { token: string; doctorName: string; specialty: string; practiceName: string; startsAt: string; timezone: string };
-type Reply = { response: string; sessionId: string; suggestedTitle?: string; report?: MedicalReport; booking?: Booking; historySaved?: boolean; recommendations?: { id: number; name: string; specialty: string; distanceKm?: number }[] };
+type Reply = { response: string; sessionId: string; suggestedTitle?: string; report?: MedicalReport; booking?: Booking; historySaved?: boolean; availabilityError?: boolean; recommendations?: { id: number; name: string; specialty: string; distanceKm?: number }[] };
 const confirmsBooking = (text: string) => /^(?:yes[, ]+)?(?:book (?:it|this|this slot|the appointment)|confirm (?:booking|the booking)|please book it|हाँ बुक कर दो|बुक कर दो)[.!?\s]*$/i.test(text.trim());
 export function Chat({ back }: { back(): void }) {
   const { preferences } = useDevicePreferences();
@@ -37,6 +37,7 @@ export function Chat({ back }: { back(): void }) {
       setMessages([...base, { sender: "user", text: prompt || "Attached a photo", image }, { sender: "ai", text: result.response }]);
       setSessionId(result.sessionId); setText(""); setImage(undefined); setReport(result.report); setBooking(result.booking); setRecommendations(result.recommendations || []);
       if (result.historySaved === false) setError("Appointment submitted. Conversation history could not be updated; check Appointments for its status.");
+      if (result.availabilityError) setError("Reply received. Some clinic slots could not be checked; try asking again.");
       if (voice && readAloud) {
         const slot = result.booking;
         const spoken = result.response + (slot ? ` Next available slot with ${slot.doctorName}: ${new Date(slot.startsAt).toLocaleString("en-IN", { timeZone: slot.timezone })}. Say book it to request this slot.` : "");
